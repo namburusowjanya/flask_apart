@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Notifications - Apartment Maintenance</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f3f4f6;
+      margin: 0;
+    }
+
+    .navbar {
+      background-color: #2c3e50;
+      color: white;
+      padding: 15px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .container {
+      padding: 30px;
+    }
+
+    h2 {
+      color: #111827;
+    }
+
+    form {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background-color: #10b981;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      margin-top: 15px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    table {
+      width: 100%;
+      background-color: white;
+      border-collapse: collapse;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    th {
+      background-color: #3b82f6;
+      color: white;
+    }
+
+    .back-btn {
+      margin-top: 20px;
+      display: inline-block;
+      background-color: #10b981;
+      color: white;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="navbar">Resident Notifications</div>
+
+  <div class="container">
+    <h2>Send Notification</h2>
+    <form action="/send_notification" method="POST">
+      <label for="type">Send To:</label>
+      <select name="type" id="type">
+        <option value="all">All Residents</option>
+        <option value="individual">Individual Flat</option>
+      </select>
+
+      <label for="flat">Flat No (if individual):</label>
+      <input type="text" name="flat" id="flat" placeholder="e.g., 102">
+
+      <label for="message">Message:</label>
+      <textarea name="message" id="message" rows="4" placeholder="Enter message to send..."></textarea>
+
+      <button type="submit">Send Notification</button>
+    </form>
+
+    <h2>Sent Notifications</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>To</th>
+          <th>Message</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Filled by backend -->
+        <!-- Example:
+        <tr>
+          <td>2025-07-26</td>
+          <td>All</td>
+          <td>Monthly maintenance due by Aug 5.</td>
+          <td>Delivered</td>
+        </tr>
+        -->
+      </tbody>
+    </table>
+
+    <a class="back-btn" href="index.html">← Back to Dashboard</a>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Maintenance Bill Tracker</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f3f4f6;
+      margin: 0;
+      padding: 0;
+    }
+
+    .navbar {
+      background-color: #2c3e50;
+      padding: 15px;
+      color: white;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .container {
+      padding: 30px;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #1f2937;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    th {
+      background-color: #10b981;
+      color: white;
+    }
+
+    .paid {
+      color: green;
+      font-weight: bold;
+    }
+
+    .unpaid {
+      color: red;
+      font-weight: bold;
+    }
+
+    .update-btn {
+      background-color: #3b82f6;
+      color: white;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .filter {
+      margin-bottom: 20px;
+    }
+
+    .filter label {
+      font-weight: bold;
+    }
+
+    .back-btn {
+      margin-top: 30px;
+      display: inline-block;
+      background-color: #10b981;
+      color: white;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="navbar">Maintenance Bill Status - July 2025</div>
+
+  <div class="container">
+    <div class="filter">
+      <label for="statusFilter">Filter by Status:</label>
+      <select id="statusFilter" onchange="filterTable()">
+        <option value="all">All</option>
+        <option value="Paid">Paid</option>
+        <option value="Unpaid">Unpaid</option>
+      </select>
+    </div>
+
+    <table id="billTable">
+      <thead>
+        <tr>
+          <th>Flat No</th>
+          <th>Owner Name</th>
+          <th>Amount (₹)</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Rows will be inserted here by backend -->
+      </tbody>
+    </table>
+
+    <a class="back-btn" href="index.html">← Back to Dashboard</a>
+  </div>
+
+  <script>
+    function markPaid(btn) {
+      const row = btn.closest("tr");
+      const statusCell = row.querySelector(".status");
+      statusCell.textContent = "Paid";
+      statusCell.className = "status paid";
+      btn.remove(); // Optional: hide the button after marking
+    }
+
+    function filterTable() {
+      const filter = document.getElementById("statusFilter").value;
+      const rows = document.querySelectorAll("#billTable tbody tr");
+
+      rows.forEach(row => {
+        const status = row.querySelector(".status")?.textContent || "";
+        if (filter === "all" || status === filter) {
+          row.style.display = "";
+        } else {
+          row.style.display = "none";
+        }
+      });
+    }
+  </script>
+
+</body>
+</html>

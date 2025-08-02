@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Total Flats Info</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f3f4f6;
+      margin: 0;
+      padding: 0;
+    }
+
+    .navbar {
+      background-color: #2c3e50;
+      color: white;
+      padding: 15px;
+      font-size: 22px;
+      text-align: center;
+    }
+
+    .container {
+      padding: 30px;
+    }
+
+    h2 {
+      color: #111827;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: white;
+      margin-bottom: 30px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #1abc9c;
+      color: white;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9fafb;
+    }
+
+    .paid {
+      color: green;
+      font-weight: bold;
+    }
+
+    .pending {
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="navbar">Total Flats Information</div>
+
+  <div class="container">
+    <h2>Flat Details</h2>
+    <table>
+      <tr>
+        <th>Flat No</th>
+        <th>Owner Name</th>
+        <th>Contact</th>
+        <th>Email</th>
+        <th>Maintenance Status</th>
+      </tr>
+      <tr>
+        <td>101</td>
+        <td>Ravi Kumar</td>
+        <td>9876543210</td>
+        <td>ravi.kumar@example.com</td>
+        <td class="paid">Paid</td>
+      </tr>
+      <tr>
+        <td>102</td>
+        <td>Neha Sharma</td>
+        <td>9123456780</td>
+        <td>neha.sharma@example.com</td>
+        <td class="pending">Pending</td>
+      </tr>
+      <tr>
+        <td>103</td>
+        <td>Amit Verma</td>
+        <td>9988776655</td>
+        <td>amit.verma@example.com</td>
+        <td class="paid">Paid</td>
+      </tr>
+      <tr>
+        <td>104</td>
+        <td>Sneha Reddy</td>
+        <td>9811223344</td>
+        <td>sneha.reddy@example.com</td>
+        <td class="pending">Pending</td>
+      </tr>
+      <tr>
+        <td>105</td>
+        <td>Manoj Singh</td>
+        <td>9090909090</td>
+        <td>manoj.singh@example.com</td>
+        <td class="paid">Paid</td>
+      </tr>
+    </table>
+  </div>
+
+</body>
+</html>

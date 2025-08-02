@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Expenses - Apartment Maintenance</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background-color: #f3f4f6;
+    }
+
+    .navbar {
+      background-color: #2c3e50;
+      color: white;
+      padding: 15px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .container {
+      padding: 30px;
+    }
+
+    h2 {
+      color: #111827;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    th {
+      background-color: #10b981;
+      color: white;
+    }
+
+    .btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+    }
+
+    .download-btn {
+      background-color: #6366f1;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .back-btn {
+      margin-top: 20px;
+      display: inline-block;
+      background-color: #10b981;
+      color: white;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="navbar">Expense Records - Apartment Society</div>
+
+  <div class="container">
+    <h2>Monthly Expenses</h2>
+
+    <table id="expenseTable">
+      <thead>
+        <tr>
+          <th>Expense ID</th>
+          <th>Date</th>
+          <th>Category</th>
+          <th>Description</th>
+          <th>Amount (₹)</th>
+          <th>Receipt</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Rows will be injected by backend -->
+        <!-- Example row:
+        <tr>
+          <td>EXP001</td>
+          <td>2025-07-01</td>
+          <td>Electricity</td>
+          <td>Common area lighting</td>
+          <td>2,000</td>
+          <td><a href="/download_expense_receipt/EXP001" class="btn download-btn">Download</a></td>
+        </tr>
+        -->
+      </tbody>
+    </table>
+
+    <a class="back-btn" href="index.html">← Back to Dashboard</a>
+  </div>
+
+</body>
+</html>
