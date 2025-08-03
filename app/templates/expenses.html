@@ -89,17 +89,22 @@
         </tr>
       </thead>
       <tbody>
-        <!-- Rows will be injected by backend -->
-        <!-- Example row:
-        <tr>
-          <td>EXP001</td>
-          <td>2025-07-01</td>
-          <td>Electricity</td>
-          <td>Common area lighting</td>
-          <td>2,000</td>
-          <td><a href="/download_expense_receipt/EXP001" class="btn download-btn">Download</a></td>
-        </tr>
-        -->
+          {% for exp in expenses %}
+          <tr>
+            <td>{{ exp.expense_id }}</td>
+            <td>{{ exp.date.strftime('%Y-%m-%d') }}</td>
+            <td>{{ exp.category }}</td>
+            <td>{{ exp.description or 'N/A' }}</td>
+            <td>{{ '{:,.2f}'.format(exp.amount) }}</td>
+            <td>
+              {% if exp.receipt_url %}
+                <a href="{{ url_for('static', filename=exp.receipt_url) }}" class="btn download-btn" target="_blank">Download</a>
+              {% else %}
+                N/A
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
       </tbody>
     </table>
 

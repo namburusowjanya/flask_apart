@@ -53,7 +53,7 @@
       font-weight: bold;
     }
 
-    .unpaid {
+    .pending {
       color: red;
       font-weight: bold;
     }
@@ -96,7 +96,7 @@
       <select id="statusFilter" onchange="filterTable()">
         <option value="all">All</option>
         <option value="Paid">Paid</option>
-        <option value="Unpaid">Unpaid</option>
+        <option value="Pending">Pending</option>
       </select>
     </div>
 
@@ -111,11 +111,23 @@
         </tr>
       </thead>
       <tbody>
-        <!-- Rows will be inserted here by backend -->
+        {% for bill in bills %}
+        <tr>
+          <td>{{ bill.flat.flat_number }}</td>
+          <td>{{ bill.flat.owner_name }}</td>
+          <td>{{ bill.base_amount + bill.late_fee }}</td>
+          <td class="status {{ bill.status|lower }}">{{ bill.status }}</td>
+          <td>
+            {% if bill.status == 'Pending' %}
+              <button class="update-btn" onclick="markPaid(this)">Mark Paid</button>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
       </tbody>
     </table>
 
-    <a class="back-btn" href="index.html">← Back to Dashboard</a>
+    <a class="back-btn" href="/dashboard">← Back to Dashboard</a>
   </div>
 
   <script>
@@ -124,7 +136,7 @@
       const statusCell = row.querySelector(".status");
       statusCell.textContent = "Paid";
       statusCell.className = "status paid";
-      btn.remove(); // Optional: hide the button after marking
+      btn.remove();
     }
 
     function filterTable() {

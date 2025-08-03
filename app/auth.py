@@ -1,25 +1,31 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from app.models import User
 from app import db
 
-auth_bp = Blueprint('auth', __name__)
+auth_bp = Blueprint('auth', __name__, url_prefix='')
 
-@auth_bp.route('/', methods=['GET'])
-def index():
-    return redirect(url_for('auth.login'))
 
-@auth_bp.route('/login', methods=['GET', 'POST'])
+@auth_bp.route('/', methods=['GET', 'POST'])
 def login():
-    error = None
     if request.method == 'POST':
-        u = User.query.filter_by(username=request.form['username']).first()
-        if u and u.check_password(request.form['password']):
-            session['user_id'] = u.id
-            return redirect(url_for('main.dashboard'))
-        error = 'Invalid username or password'
-    return render_template('login.html', error=error)
+        username = request.form['username']
+        password = request.form['password']
+        user = User.query.filter_by(username=username).first()
+
+        if user and user.check_password(password):
+            session['user_id'] = user.id
+            return redirect(url_for('auth.success_page'))  
+        else:
+            flash('Invalid username or password')
+
+    return render_template('index.html') 
+
+@auth_bp.route('/success') 
+def success_page():
+    return render_template('dashboard.html')
+
 
 @auth_bp.route('/logout')
 def logout():
-    session.pop('user_id', None)
-    return render_template('logout.html')
+    session.clear()
+    return redirect(url_for('auth.login'))

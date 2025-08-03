@@ -1,6 +1,17 @@
 from flask_mail import Message
 from app import mail
 from flask import current_app
+from functools import wraps
+from flask import session, redirect, url_for
+
+def login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('auth.login'))  # Adjust if your login route is named differently
+        return f(*args, **kwargs)
+    return wrapper
+
 
 def send_email(subject, recipients, body):
     msg = Message(subject=subject, recipients=recipients, body=body,

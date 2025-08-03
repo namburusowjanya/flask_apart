@@ -62,9 +62,7 @@
   </style>
 </head>
 <body>
-
   <div class="navbar">Total Flats Information</div>
-
   <div class="container">
     <h2>Flat Details</h2>
     <table>
@@ -75,43 +73,18 @@
         <th>Email</th>
         <th>Maintenance Status</th>
       </tr>
+      {% for flat in flats %}
       <tr>
-        <td>101</td>
-        <td>Ravi Kumar</td>
-        <td>9876543210</td>
-        <td>ravi.kumar@example.com</td>
-        <td class="paid">Paid</td>
+        <td>{{ flat.flat_number }}</td>
+        <td>{{ flat.owner_name }}</td>
+        <td>{{ flat.contact }}</td>
+        <td>{{ flat.email or 'N/A' }}</td>
+        <td class="{{ 'paid' if flat.maintenance_status == 'Paid' else 'pending' }}">
+          {{ flat.maintenance_status }}
+        </td>
       </tr>
-      <tr>
-        <td>102</td>
-        <td>Neha Sharma</td>
-        <td>9123456780</td>
-        <td>neha.sharma@example.com</td>
-        <td class="pending">Pending</td>
-      </tr>
-      <tr>
-        <td>103</td>
-        <td>Amit Verma</td>
-        <td>9988776655</td>
-        <td>amit.verma@example.com</td>
-        <td class="paid">Paid</td>
-      </tr>
-      <tr>
-        <td>104</td>
-        <td>Sneha Reddy</td>
-        <td>9811223344</td>
-        <td>sneha.reddy@example.com</td>
-        <td class="pending">Pending</td>
-      </tr>
-      <tr>
-        <td>105</td>
-        <td>Manoj Singh</td>
-        <td>9090909090</td>
-        <td>manoj.singh@example.com</td>
-        <td class="paid">Paid</td>
-      </tr>
+      {% endfor %}
     </table>
   </div>
-
 </body>
 </html>

@@ -130,13 +130,16 @@
 </head>
 <body>
 <nav>
-    <a href="#">Home</a>
-    <a href="#">Maintenance Bills</a>
-    <a href="#">Payments</a>
-    <a href="#">Expenses</a>
-    <a href="#">Reports</a>
-    <a href="#">Notifications</a>
-    <a href="#">Logout</a>
+    <nav>
+    <a href="{{ url_for('main.dashboard') }}">Home</a>
+    <a href="{{ url_for('main.maintenance_bills') }}">Maintenance Bills</a>
+    <a href="{{ url_for('main.payments') }}">Payments</a>
+    <a href="{{ url_for('main.expenses') }}">Expenses</a>
+    <a href="{{ url_for('main.reports') }}">Reports</a>
+    <a href="{{ url_for('main.notifications') }}">Notifications</a>
+    <a href="{{ url_for('auth.logout') }}">Logout</a>
+</nav>
+
 </nav>
 
 <section class="dashboard">
