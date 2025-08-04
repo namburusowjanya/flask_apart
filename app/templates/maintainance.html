@@ -65,6 +65,7 @@
       border: none;
       border-radius: 4px;
       cursor: pointer;
+      margin-right: 5px;
     }
 
     .filter {
@@ -87,9 +88,7 @@
   </style>
 </head>
 <body>
-
-  <div class="navbar">Maintenance Bill Status - July 2025</div>
-
+  <div class="navbar">Maintenance Bill Status - {{ current_month }}</div>
   <div class="container">
     <div class="filter">
       <label for="statusFilter">Filter by Status:</label>
@@ -112,15 +111,16 @@
       </thead>
       <tbody>
         {% for bill in bills %}
-        <tr>
+        <tr data-id="{{ bill.id }}">
           <td>{{ bill.flat.flat_number }}</td>
           <td>{{ bill.flat.owner_name }}</td>
-          <td>{{ bill.base_amount + bill.late_fee }}</td>
+          <td class="amount">{{ bill.base_amount + bill.late_fee }}</td>
           <td class="status {{ bill.status|lower }}">{{ bill.status }}</td>
           <td>
             {% if bill.status == 'Pending' %}
               <button class="update-btn" onclick="markPaid(this)">Mark Paid</button>
             {% endif %}
+            <button class="update-btn" onclick="editRow(this)">Edit</button>
           </td>
         </tr>
         {% endfor %}
@@ -133,10 +133,28 @@
   <script>
     function markPaid(btn) {
       const row = btn.closest("tr");
+      const billId = row.dataset.id;
       const statusCell = row.querySelector(".status");
-      statusCell.textContent = "Paid";
-      statusCell.className = "status paid";
-      btn.remove();
+
+      fetch(`/update_bill_status/${billId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ status: 'Paid' })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.message) {
+          statusCell.textContent = "Paid";
+          statusCell.className = "status paid";
+          btn.remove();
+        } else {
+          alert("Failed: " + data.error || "Unknown error");
+        }
+      })
+      .catch(() => alert("Request failed"));
     }
 
     function filterTable() {
@@ -145,14 +163,37 @@
 
       rows.forEach(row => {
         const status = row.querySelector(".status")?.textContent || "";
-        if (filter === "all" || status === filter) {
-          row.style.display = "";
-        } else {
-          row.style.display = "none";
-        }
+        row.style.display = (filter === "all" || status === filter) ? "" : "none";
       });
     }
-  </script>
 
+    function editRow(btn) {
+      const row = btn.closest("tr");
+      const amountCell = row.querySelector(".amount");
+      const currentAmount = parseFloat(amountCell.textContent);
+      const newAmount = prompt("Enter new amount:", currentAmount);
+
+      if (newAmount !== null && !isNaN(newAmount) && newAmount !== currentAmount) {
+        const billId = row.dataset.id;
+        fetch(`/edit_bill_amount/${billId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify({ amount: parseFloat(newAmount) })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.message) {
+            amountCell.textContent = newAmount;
+          } else {
+            alert("Update failed: " + data.error || "Unknown error");
+          }
+        })
+        .catch(() => alert("Update request failed"));
+      }
+    }
+  </script>
 </body>
 </html>

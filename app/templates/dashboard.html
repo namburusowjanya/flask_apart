@@ -134,7 +134,7 @@
     <a href="{{ url_for('main.dashboard') }}">Home</a>
     <a href="{{ url_for('main.maintenance_bills') }}">Maintenance Bills</a>
     <a href="{{ url_for('main.payments') }}">Payments</a>
-    <a href="{{ url_for('main.expenses') }}">Expenses</a>
+    <a href="{{ url_for('main.add_expense') }}">Expenses</a>
     <a href="{{ url_for('main.reports') }}">Reports</a>
     <a href="{{ url_for('main.notifications') }}">Notifications</a>
     <a href="{{ url_for('auth.logout') }}">Logout</a>
@@ -144,10 +144,10 @@
 
 <section class="dashboard">
     <div class="card green">
-        <h3>Total Flats</h3>
+        <a href="{{ url_for('main.flats_info') }}"><b>Total Flats</b></a>
     </div>
     <div class="card">
-        <h3>Maintenance Collected</h3>
+    <a href="{{ url_for('main.add_expense') }}"><b>Expenses</b></a>
     </div>
     <div class="card red">
         <h3>Pending Dues</h3>
