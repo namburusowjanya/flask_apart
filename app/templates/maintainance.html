@@ -1,140 +1,283 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Maintenance Bills - {{ current_month }}</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #4caf50;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        button {
+            padding: 5px 10px;
+            margin: 0 2px;
+            cursor: pointer;
+            border: none;
+            border-radius: 3px;
+            background-color: #4caf50;
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        button:disabled {
+            background-color: grey;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <h1>Maintenance Bills - {{ current_month }}</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Bill ID</th>
+                <th>Flat Number</th>
+                <th>Month</th>
+                <th>Base Amount</th>
+                <th>Late Fee</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for bill in bills %}
+            <tr>
+                <td>{{ bill.bill_id }}</td>
+                <td>{{ bill.flat.flat_number if bill.flat else 'N/A' }}</td>
+                <td>{{ bill.month }}</td>
+                <td>{{ bill.base_amount }}</td>
+                <td>{{ bill.late_fee }}</td>
+                <td>{{ bill.status }}</td>
+                <td>
+                    {% if bill.status != 'Paid' %}
+                    <button onclick="markAsPaid({{ bill.bill_id }})">Mark as Paid</button>
+                    {% else %}
+                    <button disabled>Paid</button>
+                    {% endif %}
+                    <button onclick="editAmount({{ bill.bill_id }}, {{ bill.base_amount }})">Edit</button>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+    function markAsPaid(billId) {
+        fetch(`/update_bill_status/${billId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'Paid' })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.message) {
+                alert("Status updated successfully!");
+                location.reload();
+            } else {
+                alert("Error: " + (data.error || "Unknown error"));
+            }
+        })
+        .catch(err => alert("Request failed: " + err));
+    }
+
+    function editAmount(billId, currentAmount) {
+        const newAmount = prompt("Enter new amount:", currentAmount);
+        if (newAmount !== null && !isNaN(newAmount)) {
+            fetch(`/edit_bill_amount/${billId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ base_amount: parseFloat(newAmount) })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.message) {
+                    alert("Amount updated successfully!");
+                    location.reload();
+                } else {
+                    alert("Error: " + (data.error || "Unknown error"));
+                }
+            })
+            .catch(err => alert("Request failed: " + err));
+        }
+    }
+    </script>
+</body>
+</html> -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Maintenance Bill Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Maintenance Bills</title>
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #f3f4f6;
-      margin: 0;
-      padding: 0;
-    }
-
-    .navbar {
-      background-color: #2c3e50;
-      padding: 15px;
-      color: white;
-      text-align: center;
-      font-weight: bold;
-    }
-
-    .container {
-      padding: 30px;
-    }
-
-    h2 {
-      margin-bottom: 20px;
-      color: #1f2937;
-    }
-
     table {
-      width: 100%;
       border-collapse: collapse;
-      background-color: white;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      width: 100%;
     }
-
     th, td {
-      padding: 12px;
-      text-align: center;
-      border-bottom: 1px solid #e5e7eb;
+      border: 1px solid #ddd;
+      padding: 8px;
     }
-
     th {
-      background-color: #10b981;
+      background-color: #4CAF50;
       color: white;
+      text-align: left;
     }
-
-    .paid {
+    tr:nth-child(even) {background-color: #f2f2f2;}
+    .status.paid {
       color: green;
       font-weight: bold;
     }
-
-    .pending {
+    .status.pending {
       color: red;
       font-weight: bold;
     }
-
-    .update-btn {
-      background-color: #3b82f6;
-      color: white;
-      padding: 5px 10px;
-      border: none;
-      border-radius: 4px;
+    button {
       cursor: pointer;
-      margin-right: 5px;
-    }
-
-    .filter {
-      margin-bottom: 20px;
-    }
-
-    .filter label {
-      font-weight: bold;
-    }
-
-    .back-btn {
-      margin-top: 30px;
-      display: inline-block;
-      background-color: #10b981;
+      padding: 5px 10px;
+      margin: 2px;
+      border: none;
+      border-radius: 3px;
+      background-color: #2196F3;
       color: white;
-      padding: 10px 20px;
-      text-decoration: none;
-      border-radius: 5px;
+    }
+    button.mark-paid-btn {
+      background-color: #4CAF50;
     }
   </style>
 </head>
 <body>
-  <div class="navbar">Maintenance Bill Status - {{ current_month }}</div>
-  <div class="container">
-    <div class="filter">
-      <label for="statusFilter">Filter by Status:</label>
-      <select id="statusFilter" onchange="filterTable()">
-        <option value="all">All</option>
-        <option value="Paid">Paid</option>
-        <option value="Pending">Pending</option>
-      </select>
-    </div>
+  <h2>Maintenance Bills - {{ current_month }}</h2>
 
-    <table id="billTable">
-      <thead>
-        <tr>
-          <th>Flat No</th>
-          <th>Owner Name</th>
-          <th>Amount (₹)</th>
-          <th>Status</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for bill in bills %}
-        <tr data-id="{{ bill.id }}">
-          <td>{{ bill.flat.flat_number }}</td>
-          <td>{{ bill.flat.owner_name }}</td>
-          <td class="amount">{{ bill.base_amount + bill.late_fee }}</td>
-          <td class="status {{ bill.status|lower }}">{{ bill.status }}</td>
-          <td>
-            {% if bill.status == 'Pending' %}
-              <button class="update-btn" onclick="markPaid(this)">Mark Paid</button>
-            {% endif %}
-            <button class="update-btn" onclick="editRow(this)">Edit</button>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-    <a class="back-btn" href="/dashboard">← Back to Dashboard</a>
-  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Bill ID</th>
+        <th>Flat Number</th>
+        <th>Month</th>
+        <th>Base Amount</th>
+        <th>Late Fee</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for bill in bills %}
+      <tr data-id="{{ bill.bill_id }}">
+        <td>{{ bill.bill_id }}</td>
+        <td>{{ bill.flat.flat_number }}</td>
+        <td>{{ bill.month }}</td>
+        <td class="amount">{{ "%.2f"|format(bill.base_amount) }}</td>
+        <td class="late_fee">{{ "%.2f"|format(bill.late_fee) }}</td>
+        <td class="status {{ bill.status|lower }}">{{ bill.status }}</td>
+        <td>
+          <button onclick="editRow(this)">Edit</button>
+          {% if bill.status != 'Paid' %}
+          <button class="mark-paid-btn" onclick="markPaid(this)">Mark Paid</button>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 
   <script>
+    function editRow(btn) {
+      const row = btn.closest("tr");
+      const amountCell = row.querySelector(".amount");
+      const lateFeeCell = row.querySelector(".late_fee");
+      const statusCell = row.querySelector(".status");
+
+      const currentAmount = parseFloat(amountCell.textContent);
+      const currentLateFee = parseFloat(lateFeeCell.textContent);
+      const currentStatus = statusCell.textContent.trim();
+
+      const newAmount = prompt("Enter new base amount:", currentAmount);
+      if (newAmount === null || isNaN(newAmount)) {
+        alert("Invalid base amount");
+        return;
+      }
+
+      const newLateFee = prompt("Enter new late fee:", currentLateFee);
+      if (newLateFee === null || isNaN(newLateFee)) {
+        alert("Invalid late fee");
+        return;
+      }
+
+      const newStatus = prompt("Enter new status (Paid or Pending):", currentStatus);
+      if (newStatus === null || (newStatus !== "Paid" && newStatus !== "Pending")) {
+        alert("Invalid status");
+        return;
+      }
+
+      const billId = row.dataset.id;
+
+      fetch(`/edit_bill_amount/${billId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+          base_amount: parseFloat(newAmount),
+          late_fee: parseFloat(newLateFee),
+          status: newStatus
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.message) {
+          amountCell.textContent = parseFloat(newAmount).toFixed(2);
+          lateFeeCell.textContent = parseFloat(newLateFee).toFixed(2);
+          statusCell.textContent = newStatus;
+          statusCell.className = `status ${newStatus.toLowerCase()}`;
+
+          if (newStatus === "Paid") {
+            const markPaidBtn = row.querySelector(".mark-paid-btn");
+            if (markPaidBtn) markPaidBtn.remove();
+          } else {
+            // If status changed to Pending and Mark Paid button is missing, add it back
+            if (!row.querySelector(".mark-paid-btn")) {
+              const actionsCell = row.querySelector("td:last-child");
+              const btn = document.createElement("button");
+              btn.className = "mark-paid-btn";
+              btn.textContent = "Mark Paid";
+              btn.onclick = () => markPaid(btn);
+              actionsCell.appendChild(btn);
+            }
+          }
+        } else {
+          alert("Update failed: " + (data.error || "Unknown error"));
+        }
+      })
+      .catch(() => alert("Update request failed"));
+    }
+
     function markPaid(btn) {
       const row = btn.closest("tr");
       const billId = row.dataset.id;
-      const statusCell = row.querySelector(".status");
 
       fetch(`/update_bill_status/${billId}`, {
         method: 'POST',
@@ -142,57 +285,20 @@
           'Content-Type': 'application/json',
           'X-Requested-With': 'XMLHttpRequest'
         },
-        body: JSON.stringify({ status: 'Paid' })
+        body: JSON.stringify({ status: "Paid" })
       })
       .then(res => res.json())
       .then(data => {
         if (data.message) {
+          const statusCell = row.querySelector(".status");
           statusCell.textContent = "Paid";
           statusCell.className = "status paid";
           btn.remove();
         } else {
-          alert("Failed: " + data.error || "Unknown error");
+          alert("Mark Paid failed: " + (data.error || "Unknown error"));
         }
       })
-      .catch(() => alert("Request failed"));
-    }
-
-    function filterTable() {
-      const filter = document.getElementById("statusFilter").value;
-      const rows = document.querySelectorAll("#billTable tbody tr");
-
-      rows.forEach(row => {
-        const status = row.querySelector(".status")?.textContent || "";
-        row.style.display = (filter === "all" || status === filter) ? "" : "none";
-      });
-    }
-
-    function editRow(btn) {
-      const row = btn.closest("tr");
-      const amountCell = row.querySelector(".amount");
-      const currentAmount = parseFloat(amountCell.textContent);
-      const newAmount = prompt("Enter new amount:", currentAmount);
-
-      if (newAmount !== null && !isNaN(newAmount) && newAmount !== currentAmount) {
-        const billId = row.dataset.id;
-        fetch(`/edit_bill_amount/${billId}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-          },
-          body: JSON.stringify({ amount: parseFloat(newAmount) })
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (data.message) {
-            amountCell.textContent = newAmount;
-          } else {
-            alert("Update failed: " + data.error || "Unknown error");
-          }
-        })
-        .catch(() => alert("Update request failed"));
-      }
+      .catch(() => alert("Mark Paid request failed"));
     }
   </script>
 </body>

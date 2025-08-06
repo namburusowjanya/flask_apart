@@ -1,24 +1,9 @@
-from app import db
+from . import db
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
-
-# class Flat(db.Model):
-#     __tablename__ = 'flats'
-#     flat_id = db.Column(db.Integer, primary_key=True)
-#     flat_number = db.Column(db.String(10), nullable=False)
-#     owner_name = db.Column(db.String(100), nullable=False)
-#     contact = db.Column(db.String(20))
-#     email = db.Column(db.String(120))  
-#     parking_slot = db.Column(db.String(20))
-
-#     bills = db.relationship('MaintenanceBill', backref='flat', lazy=True)
 # app/models.py
-
-from app import db
-
 class Flat(db.Model):
     __tablename__ = 'flats'
-
     flat_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     flat_number = db.Column(db.String(10), nullable=False)
     owner_name = db.Column(db.String(100), nullable=False)
@@ -26,10 +11,6 @@ class Flat(db.Model):
     email = db.Column(db.String(100))
     maintenance_status = db.Column(db.String(50))
 
-
-
-
-    
 class MaintenanceBill(db.Model):
     __tablename__ = 'maintenance_bills'
     bill_id = db.Column(db.Integer, primary_key=True)
@@ -39,27 +20,19 @@ class MaintenanceBill(db.Model):
     late_fee = db.Column(db.Float, default=0.0)
     status = db.Column(db.String(10), default='Pending')  # Paid / Pending
 
+    # RELATIONSHIPS
+    flat = db.relationship('Flat', backref='bills')  # ✅ ADD THIS LINE
     payments = db.relationship('Payment', backref='bill', lazy=True)
 
 class Payment(db.Model):
-    __tablename__ = 'payments'
     payment_id = db.Column(db.Integer, primary_key=True)
     bill_id = db.Column(db.Integer, db.ForeignKey('maintenance_bills.bill_id'), nullable=False)
-    payment_date = db.Column(db.DateTime, default=datetime.utcnow)
     amount = db.Column(db.Float, nullable=False)
-    mode = db.Column(db.String(20))  # Cash / Online
-    receipt_url = db.Column(db.String(255))  # Path to receipt image
+    payment_date = db.Column(db.DateTime, default=datetime.utcnow)
+    method = db.Column(db.String(20))  # e.g., 'cash', 'online'
+    receipt_number = db.Column(db.String(50))
 
-# class Expense(db.Model):
-#     __tablename__ = 'expenses'
-#     expense_id = db.Column(db.Integer, primary_key=True)
-#     date = db.Column(db.Date, default=datetime.utcnow)
-#     vendor = db.Column(db.String(100))
-#     category = db.Column(db.String(50))
-#     amount = db.Column(db.Float, nullable=False)
-#     description = db.Column(db.Text)
-#     receipt_url = db.Column(db.String(255))
-#     approval_status = db.Column(db.String(20), default='Auto')  # Auto / Pending / Approved / Rejected
+
 class Expense(db.Model):
     __tablename__ = 'expenses'
     expense_id = db.Column(db.Integer, primary_key=True)
@@ -69,7 +42,6 @@ class Expense(db.Model):
     amount = db.Column(db.Float, nullable=False)
     date = db.Column(db.Date, nullable=False)
     receipt_url = db.Column(db.String(255))
-
 
 class FinancialReport(db.Model):
     __tablename__ = 'financial_reports'

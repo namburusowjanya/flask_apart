@@ -30,7 +30,13 @@
             justify-content: center;
             flex-wrap: wrap;
         }
-
+        a{
+            text-decoration: none;
+            font-weight: bolder;
+            color: black;
+            justify-content: center;
+            
+        }
         nav a {
             color: white;
             padding: 14px 20px;
@@ -146,9 +152,10 @@
     <div class="card green">
         <a href="{{ url_for('main.flats_info') }}"><b>Total Flats</b></a>
     </div>
-    <div class="card">
-    <a href="{{ url_for('main.add_expense') }}"><b>Expenses</b></a>
-    </div>
+<div class="card">
+  <a href="{{ url_for('main.expenses') }}"><b>Expenses</b></a>
+</div>
+
     <div class="card red">
         <h3>Pending Dues</h3>
     </div>
