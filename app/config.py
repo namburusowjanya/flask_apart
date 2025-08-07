@@ -2,7 +2,7 @@ import os
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 class Config:
-    SECRET_KEY = '449f75252d790edf8f574808516c623842bf3706d8f7f7a78b69fa65c9715fdd'
+    SECRET_KEY = 'Add your secret_key'
     SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'apartment.db')
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
