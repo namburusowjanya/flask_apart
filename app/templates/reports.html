@@ -16,7 +16,7 @@
       {% endif %}
     {% endwith %}
 
-    <!-- Generate Report Button -->
+    <!-- Generate Report Form -->
     <form method="GET" action="{{ url_for('main.manual_generate_report') }}" class="row g-3 mb-4">
       <div class="col-auto">
           <label for="month" class="col-form-label">Select Month:</label>
@@ -28,11 +28,12 @@
           <button type="submit" class="btn btn-success">Generate Report</button>
       </div>
     </form>
+
     {% if selected_month %}
       <h5 class="text-muted mb-3">Showing report for: {{ selected_month }}</h5>
     {% endif %}
 
-
+    <!-- Report Table -->
     {% if reports %}
     <table class="table table-bordered table-striped">
         <thead class="table-dark">
@@ -42,6 +43,7 @@
                 <th>Total Income</th>
                 <th>Total Expenses</th>
                 <th>Closing Balance</th>
+                <th>Download</th>
             </tr>
         </thead>
         <tbody>
@@ -52,10 +54,47 @@
                 <td>₹{{ "%.2f"|format(report.total_income) }}</td>
                 <td>₹{{ "%.2f"|format(report.total_expenses) }}</td>
                 <td>₹{{ "%.2f"|format(report.closing_balance) }}</td>
+                <td>
+  <a href="{{ url_for('main.download_report', month=report.month) }}" class="btn btn-sm btn-primary">Download PDF</a>
+</td>
+
             </tr>
             {% endfor %}
         </tbody>
     </table>
+
+    <!-- Chart Section -->
+    <canvas id="reportChart" class="my-4" height="100"></canvas>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      const ctx = document.getElementById('reportChart').getContext('2d');
+      const reportChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: [{% for report in reports %}'{{ report.month }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+          datasets: [
+            {
+              label: 'Income',
+              data: [{% for report in reports %}{{ report.total_income | float }}{% if not loop.last %}, {% endif %}{% endfor %}],
+              backgroundColor: 'rgba(75, 192, 192, 0.7)'
+            },
+            {
+              label: 'Expenses',
+              data: [{% for report in reports %}{{ report.total_expenses | float }}{% if not loop.last %}, {% endif %}{% endfor %}],
+              backgroundColor: 'rgba(255, 99, 132, 0.7)'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    </script>
     {% else %}
         <p>No financial reports available yet.</p>
     {% endif %}

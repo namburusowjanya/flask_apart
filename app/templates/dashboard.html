@@ -65,7 +65,6 @@
 
         .card.red { border-left-color: #e74c3c; }
         .card.green { border-left-color: #2ecc71; }
-        .card.orange { border-left-color: #f39c12; }
 
         .quick-actions {
             padding: 20px;
@@ -138,9 +137,9 @@
 <nav>
     <nav>
     <a href="{{ url_for('main.dashboard') }}">Home</a>
-    <a href="{{ url_for('main.maintenance_bills') }}">Maintenance Bills</a>
+    <a href="{{ url_for('main.maintenance_bills',month=current_month) }}">Maintenance Bills</a>
     <a href="{{ url_for('main.payments') }}">Payments</a>
-    <a href="{{ url_for('main.add_expense') }}">Expenses</a>
+    <a href="{{ url_for('main.expenses') }}">Expenses</a>
     <a href="{{ url_for('main.reports') }}">Reports</a>
     <a href="{{ url_for('main.notifications') }}">Notifications</a>
     <a href="{{ url_for('auth.logout') }}">Logout</a>
@@ -158,9 +157,6 @@
 
     <div class="card red">
         <h3>Pending Dues</h3>
-    </div>
-    <div class="card orange">
-        <h3>Total Expenses</h3>
     </div>
 </section>
 </body>

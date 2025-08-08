@@ -1,22 +1,18 @@
-from flask import Blueprint, request, jsonify, render_template, redirect, url_for, session,flash
+from flask import Blueprint, request, jsonify, render_template, redirect, url_for, session,flash,current_app,send_from_directory
 from functools import wraps
-from datetime import datetime
 from sqlalchemy import extract, func
-from flask import flash
 from werkzeug.utils import secure_filename
 import os
 from app.tasks import generate_monthly_report
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta
-from flask import current_app
 from app import db
 from app.models import (
     User, Flat, MaintenanceBill, Payment,
     Expense, FinancialReport, CategoryBudget
 )
 from app.uploads import save_receipt
-from app.utils import notify_unusual_expense
-from app.reports import generate_monthly_financial_report
+from app.utils import notify_late_payment
 main_bp = Blueprint('main', __name__, url_prefix='')
 
 # --- authentication decorator ---
@@ -94,17 +90,29 @@ def payments():
     all_payments = Payment.query.all()
     return render_template('payment.html', payments=all_payments)
 
-@main_bp.route('/notifications')
+@main_bp.route('/notifications', methods=['GET', 'POST'])
 @login_required
 def notifications():
-    return render_template('notifications.html')
+    flats = Flat.query.all()
 
-@main_bp.route('/maintenance-bills')
-@login_required
-def maintenance_bills_old():
-    all_bills = MaintenanceBill.query.all()
-    current_month = datetime.now().strftime('%B %Y')
-    return render_template('maintainance.html', bills=all_bills, current_month=current_month)
+    if request.method == 'POST':
+        flat_number = request.form.get('flat_number')
+        subject = request.form.get('subject')
+        message = request.form.get('message')
+
+        if not flat_number or not subject or not message:
+            flash("All fields are required", "danger")
+            return render_template('notifications.html', flats=flats)
+
+        flat = Flat.query.filter_by(flat_number=flat_number).first()
+        if not flat:
+            flash("Flat not found", "danger")
+            return render_template('notifications.html', flats=flats)
+        notify_late_payment(flat.email, flat.contact, subject, message)
+        flash("Notification sent successfully!", "success")
+        return redirect(url_for('main.flats_info'))
+
+    return render_template('notifications.html', flats=flats)
 
 @main_bp.route('/update_bill_status/<int:bill_id>', methods=['POST'])
 @login_required
@@ -205,18 +213,33 @@ def add_expense():
 
     return redirect(url_for('main.expenses'))
 
-@main_bp.route('/maintenance-bills')
-def maintenance_bills():
-    # You can render a template or return something here
-    return render_template('maintenance_bills.html')  # Or whatever fits your app
-
-@main_bp.route('/expenses/download/pdf')
+@main_bp.route('/maintenance_bills')
 @login_required
-def download_pdf():
-    buf = generate_expense_pdf()
-    return send_file(buf, as_attachment=True,
-                     download_name='expenses.pdf',
-                     mimetype='application/pdf')
+def maintenance_bills():
+    current_month = request.args.get('month')
+    if not current_month:
+        current_month = datetime.today().strftime('%Y-%m')
+
+    bills = MaintenanceBill.query.filter_by(month=current_month).join(Flat).all()
+    return render_template('maintainance.html', bills=bills, current_month=current_month)
+
+@main_bp.route('/add_maintenance_bill', methods=['POST'])
+@login_required
+def add_maintenance_bill():
+    flat_number = request.form['flat_number']
+    base_amount = float(request.form['base_amount'])
+    late_fee = float(request.form['late_fee'])
+    month = request.form['month']
+
+    flat = Flat.query.filter_by(flat_number=flat_number).first()
+    if not flat:
+        return "Flat not found", 404
+
+    new_bill = MaintenanceBill(flat_id=flat.flat_id, base_amount=base_amount, late_fee=late_fee, month=month, status='Pending')
+    db.session.add(new_bill)
+    db.session.commit()
+
+    return redirect(url_for('main.maintenance_bills', month=month))
 
 # --- REPORTS page ---
 @main_bp.route('/reports', methods=['GET'])
@@ -229,75 +252,26 @@ def reports():
         reports = FinancialReport.query.order_by(FinancialReport.month.desc()).all()
     return render_template('reports.html', reports=reports, selected_month=month)
 
-@login_required
-def check_and_send_notifications():
-    with current_app.app_context():
-        # 1. Payment due dates 3 days prior
-        due_date_limit = datetime.utcnow() + timedelta(days=3)
-        upcoming_bills = MaintenanceBill.query.filter_by(status='Pending').all()
+# @main_bp.route('/send_notification/<int:flat_number>', methods=['GET', 'POST'])
+# @login_required
+# def send_notification(flat_number):
+#     flat = Flat.query.filter_by(flat_number=flat_number)get_or_404() 
 
-        for bill in upcoming_bills:
-            # Assuming you have a due_date field or use month + day logic here
-            # For example: Due date is 5th of month stored in bill.month YYYY-MM
-            year, month = map(int, bill.month.split('-'))
-            due_date = datetime(year, month, 5)  # change this as per your rules
-            if due_date.date() == due_date_limit.date():
-                # Notify tenant via email/SMS
-                user_email = bill.flat.owner_email  # Assume flat has owner email
-                user_phone = bill.flat.owner_phone  # Assume flat has owner phone
-                message = f"Reminder: Your maintenance bill for {bill.month} is due on {due_date.date()}."
-                if user_email:
-                    send_email(user_email, "Maintenance Bill Due Reminder", message)
-                if user_phone:
-                    send_sms(user_phone, message)
+#     if request.method == 'POST':
+#         subject = request.form.get('subject')
+#         message = request.form.get('message')
 
-        # 2. Late payments (apply penalties)
-        late_fee_date = datetime.utcnow() - timedelta(days=15)
-        late_bills = MaintenanceBill.query.filter(
-            MaintenanceBill.status == 'Pending',
-            MaintenanceBill.month <= late_fee_date.strftime('%Y-%m')
-        ).all()
+#         if not subject or not message:
+#             flash("Subject and message are required", "danger")
+#             return redirect(request.url)
 
-        for bill in late_bills:
-            # Auto apply 2% penalty if not already applied
-            if bill.late_fee == 0:
-                penalty = bill.base_amount * 0.02
-                bill.late_fee = penalty
-                db.session.commit()
+#         from app.utils import notify_tenant
+#         notify_tenant(flat.email, flat.contact, subject, message)
+#         flash("Notification sent successfully!", "success")
+#         return redirect(url_for('main.flats_info'))
 
-                message = f"Your maintenance bill for {bill.month} is overdue. A 2% late penalty of {penalty:.2f} has been applied."
-                user_email = bill.flat.owner_email
-                user_phone = bill.flat.owner_phone
-                if user_email:
-                    send_email(user_email, "Late Payment Penalty Applied", message)
-                if user_phone:
-                    send_sms(user_phone, message)
+#     return render_template('notifications.html', flat=flat)
 
-        # 3. Unusual expenses alert (20% above monthly average)
-        # Assuming you have an Expense model with fields: amount, month
-        from app.models import Expense
-
-        avg_expense = db.session.query(db.func.avg(Expense.amount)).scalar() or 0
-        expenses = Expense.query.all()
-        for expense in expenses:
-            if expense.amount > avg_expense * 1.20:
-                # Notify admin or responsible person
-                admin_email = current_app.config.get('ADMIN_EMAIL', 'admin@example.com')
-                subject = "Unusual Expense Alert"
-                body = f"Expense of {expense.amount} in {expense.month} is 20% above the average monthly expense."
-                send_email(admin_email, subject, body)
-                # You can also add SMS notification if needed
-def send_email(to, subject, body):
-    msg = Message(subject, recipients=[to])
-    msg.body = body
-    mail.send(msg)
-
-def send_sms(to_phone, body):
-    twilio_client.messages.create(
-        body=body,
-        from_=current_app.config['TWILIO_PHONE_NUMBER'],
-        to=to_phone
-    )
 @main_bp.route('/generate-financial-report', methods=['GET'])
 @login_required
 def manual_generate_report():
@@ -305,5 +279,24 @@ def manual_generate_report():
     if not month:
         flash("Please select a month.", "warning")
         return redirect(url_for('main.reports'))
-    generate_monthly_financial_report(month)
+    # Check if report already exists
+    existing = FinancialReport.query.filter_by(month=month).first()
+    if existing:
+        flash(f"Report for {month} already exists. Regeneration will overwrite the existing report.", "danger")
+        return redirect(url_for('main.reports', month=month))
+
+    from app.tasks import generate_monthly_report
+    generate_monthly_report(month)
+    flash(f"Report for {month} generated successfully.", "success")
     return redirect(url_for('main.reports', month=month))
+
+@main_bp.route('/download-report/<string:month>', methods=['GET'])
+def download_report(month):
+    folder_path = os.path.join(os.getcwd(), 'app', 'generated_reports')
+    filename = f"Financial_Report_{month}.pdf"
+    full_path = os.path.join(folder_path, filename)
+
+    if not os.path.exists(full_path):
+        return "Report not found", 404
+
+    return send_from_directory(folder_path, filename, as_attachment=True)
