@@ -2,35 +2,20 @@ from flask import current_app,session, redirect, url_for
 from functools import wraps
 
 
-def notify_late_payment(email, phone, subject, message):
+def notify_late_payment(email,subject, message):
     from flask import current_app
-    from twilio.rest import Client
     from flask_mail import Message
     from app import mail
 
     if email:
         try:
-            msg = Message(subject, recipients=[email])
+            msg = Message(subject, sender=current_app.config['MAIL_DEFAULT_SENDER'], recipients=[email])
             msg.body = message
             mail.send(msg)
+            print(f"Email sent to {email}")
         except Exception as e:
-            print(f"Email failed: {e}")
-
-    # SMS
-    if phone:
-        try:
-            twilio_client = Client(
-                current_app.config['TWILIO_ACCOUNT_SID'],
-                current_app.config['TWILIO_AUTH_TOKEN']
-            )
-            twilio_client.messages.create(
-                body=message,
-                from_=current_app.config['TWILIO_PHONE_NUMBER'],
-                to=phone
-            )
-        except Exception as e:
-            print(f"SMS failed: {e}")
-
+            print(f"Email failed to send: {e}")
+    
 def generate_pdf_report(report):
     folder = os.path.join(current_app.root_path,"generated_reports")  # You can choose a better name
     os.makedirs(folder, exist_ok=True)  # Create folder if it doesn’t exist

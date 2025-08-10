@@ -30,14 +30,14 @@
       <label>Email:</label>
       <input type="email" name="email" id="email" class="form-control">
     </div>
-    <div class="mb-2">
+    <!-- <div class="mb-2">
       <label>Maintenance Status:</label>
       <select name="maintenance_status" id="maintenance_status" class="form-control">
         <option value="No Data">No Data</option>
         <option value="Pending">Pending</option>
         <option value="Paid">Paid</option>
       </select>
-    </div>
+    </div> -->
     <button type="submit" class="btn btn-primary">Save</button>
     <button type="button" id="cancelBtn" class="btn btn-secondary">Cancel</button>
   </form>
@@ -50,7 +50,7 @@
         <th>Owner Name</th>
         <th>Contact</th>
         <th>Email</th>
-        <th>Maintenance Status</th>
+        <!-- <th>Maintenance Status</th> -->
         <th>Actions</th>
       </tr>
     </thead>
@@ -61,7 +61,7 @@
         <td>{{ flat.owner_name }}</td>
         <td>{{ flat.contact }}</td>
         <td>{{ flat.email }}</td>
-        <td>{{ flat.maintenance_status }}</td>
+        <!-- <td>{{ flat.maintenance_status }}</td> -->
         <td>
           <!-- Edit Button -->
           <button class="btn btn-sm btn-primary edit-btn"
@@ -69,8 +69,7 @@
                   data-flat_number="{{ flat.flat_number }}"
                   data-owner_name="{{ flat.owner_name }}"
                   data-contact="{{ flat.contact }}"
-                  data-email="{{ flat.email }}"
-                  data-maintenance_status="{{ flat.maintenance_status }}">
+                  data-email="{{ flat.email }}">
             Edit
           </button>
 
@@ -102,7 +101,7 @@
       document.getElementById('owner_name').value = button.dataset.owner_name;
       document.getElementById('contact').value = button.dataset.contact;
       document.getElementById('email').value = button.dataset.email;
-      document.getElementById('maintenance_status').value = button.dataset.maintenance_status;
+      // document.getElementById('maintenance_status').value = button.dataset.maintenance_status;
 
       document.getElementById('flatForm').style.display = 'block';
     });
@@ -121,7 +120,7 @@
     document.getElementById('owner_name').value = '';
     document.getElementById('contact').value = '';
     document.getElementById('email').value = '';
-    document.getElementById('maintenance_status').value = 'No Data';
+    // document.getElementById('maintenance_status').value = 'No Data';
   }
 </script>
 {% endblock %}

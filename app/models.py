@@ -5,28 +5,43 @@ from werkzeug.security import generate_password_hash, check_password_hash
 class Flat(db.Model):
     __tablename__ = 'flats'
     flat_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    flat_number = db.Column(db.String(10), nullable=False)
+    flat_number = db.Column(db.String(10),unique=True,nullable=False,)
     owner_name = db.Column(db.String(100), nullable=False)
     contact = db.Column(db.String(15), nullable=False)
     email = db.Column(db.String(100))
     maintenance_status = db.Column(db.String(50))
 
+    bills = db.relationship(
+        'MaintenanceBill',
+        backref='flat',
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+    expenses = db.relationship(
+        'Expense',
+        backref='flat',
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+
 class MaintenanceBill(db.Model):
     __tablename__ = 'maintenance_bills'
     bill_id = db.Column(db.Integer, primary_key=True)
-    flat_id = db.Column(db.Integer, db.ForeignKey('flats.flat_id'), nullable=False)
+    flat_id = db.Column(db.Integer, db.ForeignKey('flats.flat_id',ondelete="CASCADE"), nullable=False)
     month = db.Column(db.String(7), nullable=False)  # e.g. '2025-07'
     base_amount = db.Column(db.Float, nullable=False)
     late_fee = db.Column(db.Float, default=0.0)
     status = db.Column(db.String(10), default='Pending')  # Paid / Pending
 
     # RELATIONSHIPS
-    flat = db.relationship('Flat', backref='bills')  # ✅ ADD THIS LINE
-    payments = db.relationship('Payment', backref='bill', lazy=True)
+    
+    payments = db.relationship('Payment', backref='bill',cascade="all, delete-orphan",passive_deletes=True)
 
 class Payment(db.Model):
     payment_id = db.Column(db.Integer, primary_key=True)
-    bill_id = db.Column(db.Integer, db.ForeignKey('maintenance_bills.bill_id'), nullable=False)
+    bill_id = db.Column(db.Integer, db.ForeignKey('maintenance_bills.bill_id',ondelete="CASCADE"), nullable=False)
     amount = db.Column(db.Float, nullable=False)
     payment_date = db.Column(db.DateTime, default=datetime.utcnow)
     method = db.Column(db.String(20))  # e.g., 'cash', 'online'
@@ -36,6 +51,7 @@ class Payment(db.Model):
 class Expense(db.Model):
     __tablename__ = 'expenses'
     expense_id = db.Column(db.Integer, primary_key=True)
+    flat_id = db.Column(db.Integer, db.ForeignKey('flats.flat_id', ondelete="CASCADE"))  # link to flat
     vendor = db.Column(db.String(100), nullable=False)
     category = db.Column(db.String(50), nullable=False)
     description = db.Column(db.Text)
@@ -67,3 +83,10 @@ class User(db.Model):
         self.password_hash = generate_password_hash(pw)
     def check_password(self, pw):
         return check_password_hash(self.password_hash, pw)
+
+class Notification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.DateTime, default=datetime.utcnow)
+    recipient = db.Column(db.String(255))   # "All" or flat number
+    message = db.Column(db.Text)
+    status = db.Column(db.String(50)) 

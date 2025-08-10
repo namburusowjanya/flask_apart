@@ -3,20 +3,17 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_mail import Mail
 from apscheduler.schedulers.background import BackgroundScheduler
-from twilio.rest import Client
 from .config import Config
 
 db = SQLAlchemy()
 migrate = Migrate()
 mail = Mail()
-twilio_client = None  # Global variable
 def check_and_send_notifications():
     # ✅ You will implement this notification logic later
     pass
 
 def create_app():
-    global twilio_client  # So we can set the global Twilio client
-
+    
     app = Flask(__name__, template_folder="templates", static_folder="static")
     app.config.from_object(Config)
     app.secret_key = app.config['SECRET_KEY']
@@ -24,9 +21,6 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     mail.init_app(app)
-
-    # Initialize Twilio client
-    twilio_client = Client(app.config['TWILIO_ACCOUNT_SID'], app.config['TWILIO_AUTH_TOKEN'])
 
     # Register blueprints
     from app.auth import auth_bp

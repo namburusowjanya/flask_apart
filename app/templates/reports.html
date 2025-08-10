@@ -71,7 +71,7 @@
       const reportChart = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: [{% for report in reports %}'{{ report.month }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+          labels: [{% for report in reports %}'{{ report.month }}'{% if not loop.last %} ,{% endif %}{% endfor %}],
           datasets: [
             {
               label: 'Income',
