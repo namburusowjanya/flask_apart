@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Advance Payment - Apartment Maintenance</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:#f6f8fa; margin:0; padding:24px; color:#111 }
+    .card { background:#fff; border-radius:10px; box-shadow:0 6px 18px rgba(15,23,42,0.06); padding:20px; margin-bottom:20px; }
+    h1 { margin:0 0 12px 0; font-size:20px }
+    form .row { display:flex; gap:12px; flex-wrap:wrap; }
+    label { display:block; font-size:13px; margin-bottom:6px; color:#374151 }
+    input[type="text"], input[type="number"], input[type="month"], select { width:100%; padding:8px 10px; border:1px solid #e5e7eb; border-radius:6px; box-sizing:border-box; }
+    .col { flex:1 1 200px; min-width:180px; }
+    .actions { margin-top:12px; display:flex; gap:8px; align-items:center; }
+    button { background:#0ea5a0; color:white; border:none; padding:10px 14px; border-radius:8px; cursor:pointer; }
+    button.secondary { background:#6366f1; }
+    table { width:100%; border-collapse:collapse; margin-top:18px; }
+    th, td { text-align:left; padding:10px 12px; border-bottom:1px solid #f1f5f9; font-size:14px; }
+    th { background:#ecfdf5; color:#0f766e; font-weight:600; }
+    .muted { color:#6b7280; font-size:13px; }
+    .small { font-size:13px; color:#374151 }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h1>Record Advance Payment</h1>
+    <p class="muted">Pay multiple months in advance (2, 6, 12, etc.). This will create an AdvancePayment record and mark monthly bills as paid for the selected months.</p>
+
+    <form id="advanceForm" method="POST" action="{{ url_for('main.add_advance_payment') }}">
+      <div class="row">
+        <div class="col">
+          <label for="flat">Flat</label>
+          <select id="flat" name="flat_no" required>
+            <option value="">Select flat</option>
+            {% for f in flats %}
+            <option value="{{ f.flat_number }}">{{ f.flat_number }} — {{ f.owner_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col">
+          <label for="start_month">Start month</label>
+          <!-- use YYYY-MM; HTML month input -->
+          <input id="start_month" name="start_month" type="month" required>
+        </div>
+
+        <div class="col">
+          <label for="months_paid_for">Months to pay</label>
+          <select id="months_paid_for" name="months_paid_for" required>
+            <option value="">Select</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="6">6</option>
+            <option value="12">12</option>
+          </select>
+        </div>
+
+        <div class="col">
+          <label for="monthly_amount">Monthly rent (₹)</label>
+          <input id="monthly_amount" name="monthly_amount" type="number" step="0.01" min="0" required placeholder="e.g. 1500">
+        </div>
+
+        <div class="col">
+          <label for="total_amount">Total amount (₹)</label>
+          <input id="total_amount" name="amount" type="number" step="0.01" min="0" required readonly>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:12px">
+        <div class="col">
+          <label for="method">Payment method</label>
+          <select id="method" name="method">
+            <option value="">Select</option>
+            <option value="cash">Cash</option>
+            <option value="bank">Bank Transfer</option>
+            <option value="online">Online</option>
+          </select>
+        </div>
+
+        <div class="col">
+          <label for="receipt_no">Receipt number (optional)</label>
+          <input id="receipt_no" name="receipt_no" type="text" placeholder="Receipt #">
+        </div>
+
+        <div class="col" style="align-self:end">
+          <div class="actions">
+            <button type="submit">Save Advance Payment</button>
+            <button type="button" class="secondary" id="resetBtn">Reset</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h1>Recorded Advance Payments</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Flat</th>
+          <th>Start month</th>
+          <th>Months</th>
+          <th>Total (₹)</th>
+          <th>Payment date</th>
+          <th>Method</th>
+          <th>Receipt</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if advance_payments %}
+          {% for a in advance_payments %}
+          <tr>
+            <td class="small">{{ a.id }}</td>
+            <td class="small">{{ a.flat.flat_number if a.flat else a.flat_id }}</td>
+            <td class="small">{{ a.start_month }}</td>
+            <td class="small">{{ a.months_paid_for }}</td>
+            <td class="small">₹{{ "%.2f"|format(a.total_amount) }}</td>
+            <td class="small">{{ a.payment_date.strftime('%Y-%m-%d') if a.payment_date else '' }}</td>
+            <td class="small">{{ a.method or '' }}</td>
+            <td class="small">{{ a.receipt_number or '' }}</td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr><td colspan="8" class="muted">No advance payments recorded yet.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    // auto-calc total = monthly_amount * months_paid_for
+    const monthlyInput = document.getElementById('monthly_amount');
+    const monthsSelect = document.getElementById('months_paid_for');
+    const totalInput = document.getElementById('total_amount');
+    const resetBtn = document.getElementById('resetBtn');
+
+    function calcTotal() {
+      const m = parseFloat(monthlyInput.value) || 0;
+      const months = parseInt(monthsSelect.value) || 0;
+      const total = (m * months).toFixed(2);
+      totalInput.value = (months > 0 && m > 0) ? total : '';
+    }
+
+    monthlyInput.addEventListener('input', calcTotal);
+    monthsSelect.addEventListener('change', calcTotal);
+
+    resetBtn.addEventListener('click', () => {
+      document.getElementById('advanceForm').reset();
+      totalInput.value = '';
+    });
+
+    // optional: prevent submission if total is empty
+    document.getElementById('advanceForm').addEventListener('submit', (e) => {
+      if (!totalInput.value || parseFloat(totalInput.value) <= 0) {
+        e.preventDefault();
+        alert('Please enter monthly rent and months to calculate the total amount before submitting.');
+      }
+    });
+  </script>
+</body>
+</html>

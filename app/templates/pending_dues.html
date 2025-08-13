@@ -16,7 +16,6 @@
                 <th>Owner Name</th>
                 <th>Month</th>
                 <th>Base Amount</th>
-                <th>Late Fee</th>
                 <th>Total</th>
                 <th>Status</th>
             </tr>
@@ -28,8 +27,7 @@
                 <td>{{ due.flat.owner_name }}</td>
                 <td>{{ due.month }}</td>
                 <td>₹{{ "%.2f"|format(due.base_amount) }}</td>
-                <td>₹{{ "%.2f"|format(due.late_fee) }}</td>
-                <td>₹{{ "%.2f"|format(due.base_amount + due.late_fee) }}</td>
+                <td>₹{{ "%.2f"|format(due.base_amount) }}</td>
                 <td class="text-danger">{{ due.status }}</td>
             </tr>
             {% endfor %}

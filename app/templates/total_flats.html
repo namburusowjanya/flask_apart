@@ -23,21 +23,18 @@
       <input type="text" name="owner_name" id="owner_name" required class="form-control">
     </div>
     <div class="mb-2">
-      <label>Contact:</label>
-      <input type="text" name="contact" id="contact" required class="form-control">
+      <label>Owner Contact:</label>
+      <input type="text" name="owner_contact" id="owner_contact" required class="form-control">
     </div>
     <div class="mb-2">
-      <label>Email:</label>
-      <input type="email" name="email" id="email" class="form-control">
+      <label>Tennant Name:</label>
+      <input type="text" name="tennant_name" id="tennant_name" required class="form-control">
     </div>
-    <!-- <div class="mb-2">
-      <label>Maintenance Status:</label>
-      <select name="maintenance_status" id="maintenance_status" class="form-control">
-        <option value="No Data">No Data</option>
-        <option value="Pending">Pending</option>
-        <option value="Paid">Paid</option>
-      </select>
-    </div> -->
+    <div class="mb-2">
+      <label>Tennant Contact:</label>
+      <input type="text" name="tennant_contact" id="tennant_contact" required class="form-control">
+    </div>
+
     <button type="submit" class="btn btn-primary">Save</button>
     <button type="button" id="cancelBtn" class="btn btn-secondary">Cancel</button>
   </form>
@@ -48,9 +45,9 @@
       <tr>
         <th>Flat Number</th>
         <th>Owner Name</th>
-        <th>Contact</th>
-        <th>Email</th>
-        <!-- <th>Maintenance Status</th> -->
+        <th>Owner Contact</th>
+        <th>Tennant Name</th>
+        <th>Tennant Contact</th>
         <th>Actions</th>
       </tr>
     </thead>
@@ -59,17 +56,18 @@
       <tr>
         <td>{{ flat.flat_number }}</td>
         <td>{{ flat.owner_name }}</td>
-        <td>{{ flat.contact }}</td>
-        <td>{{ flat.email }}</td>
-        <!-- <td>{{ flat.maintenance_status }}</td> -->
+        <td>{{ flat.owner_contact }}</td>
+        <td>{{flat.tennant_name}}</td>
+        <td>{{flat.tennant_contact}}</td>
         <td>
           <!-- Edit Button -->
           <button class="btn btn-sm btn-primary edit-btn"
                   data-id="{{ flat.flat_id }}"
                   data-flat_number="{{ flat.flat_number }}"
                   data-owner_name="{{ flat.owner_name }}"
-                  data-contact="{{ flat.contact }}"
-                  data-email="{{ flat.email }}">
+                  data-owner_contact="{{ flat.owner_contact }}"
+                  data-tennant_name="{{ flat.tennant_name }}"
+                  data-tennant_contact="{{ flat.tennant_contact }}">
             Edit
           </button>
 
@@ -99,9 +97,9 @@
       document.getElementById('flat_id').value = button.dataset.id;
       document.getElementById('flat_number').value = button.dataset.flat_number;
       document.getElementById('owner_name').value = button.dataset.owner_name;
-      document.getElementById('contact').value = button.dataset.contact;
-      document.getElementById('email').value = button.dataset.email;
-      // document.getElementById('maintenance_status').value = button.dataset.maintenance_status;
+      document.getElementById('owner_contact').value = button.dataset.owner_contact;
+      document.getElementById('tennant_name').value = button.dataset.tennant_name;
+      document.getElementById('tennant_contact').value = button.dataset.tennant_contact;
 
       document.getElementById('flatForm').style.display = 'block';
     });
@@ -118,9 +116,9 @@
     document.getElementById('flat_id').value = '';
     document.getElementById('flat_number').value = '';
     document.getElementById('owner_name').value = '';
-    document.getElementById('contact').value = '';
-    document.getElementById('email').value = '';
-    // document.getElementById('maintenance_status').value = 'No Data';
+    document.getElementById('owner_contact').value = '';
+    document.getElementById('tennant_name').value = '';
+    document.getElementById('tennant_contact').value = '';
   }
 </script>
 {% endblock %}

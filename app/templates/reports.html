@@ -5,7 +5,7 @@
     <h2 class="mb-4">Financial Reports</h2>
 
     <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
+    <!-- {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
           <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
@@ -14,7 +14,7 @@
           </div>
         {% endfor %}
       {% endif %}
-    {% endwith %}
+    {% endwith %} -->
 
     <!-- Generate Report Form -->
     <form method="GET" action="{{ url_for('main.manual_generate_report') }}" class="row g-3 mb-4">

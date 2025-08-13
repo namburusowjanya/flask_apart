@@ -1,15 +1,12 @@
 from app import db
-from app.models import MaintenanceBill, Payment, Expense
-from sqlalchemy import func
+from app.models import MaintenanceBill, Expense
+from sqlalchemy import func, extract
 from datetime import datetime
 from flask import send_file
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 import io
-from app.models import FinancialReport, Payment, Expense
-from datetime import datetime
-from sqlalchemy import extract
 def get_defaulters():
     defaulters = []
     bills = MaintenanceBill.query.filter_by(status='Pending').all()
@@ -29,31 +26,6 @@ def lock_month(month):
     # Placeholder for month locking logic (e.g., set a flag or archive data)
     return f"Month {month} is now locked for editing."
 
-# def generate_expense_pdf():
-#     buffer = io.BytesIO()
-#     doc = SimpleDocTemplate(buffer, pagesize=letter)
-#     data = [['Date', 'Vendor', 'Category', 'Amount', 'Description']]
-
-#     expenses = Expense.query.all()
-#     for exp in expenses:
-#         data.append([
-#             exp.date.strftime('%Y-%m-%d'),
-#             exp.vendor,
-#             exp.category,
-#             f"₹{exp.amount:.2f}",
-#             exp.description or ""
-#         ])
-
-#     table = Table(data)
-#     table.setStyle(TableStyle([
-#         ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
-#         ('GRID', (0, 0), (-1, -1), 1, colors.black),
-#         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold')
-#     ]))
-
-#     doc.build([table])
-#     buffer.seek(0)
-#     return buffer
 def generate_monthly_financial_report(month):
     """Generate or update the financial report for a given month (format: YYYY-MM)"""
     year, month_num = map(int, month.split("-"))

@@ -1,16 +1,11 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from flask_mail import Mail
 from apscheduler.schedulers.background import BackgroundScheduler
 from .config import Config
 
 db = SQLAlchemy()
 migrate = Migrate()
-mail = Mail()
-def check_and_send_notifications():
-    # ✅ You will implement this notification logic later
-    pass
 
 def create_app():
     
@@ -20,7 +15,6 @@ def create_app():
 
     db.init_app(app)
     migrate.init_app(app, db)
-    mail.init_app(app)
 
     # Register blueprints
     from app.auth import auth_bp
@@ -30,7 +24,6 @@ def create_app():
 
     # Start APScheduler
     scheduler = BackgroundScheduler()
-    scheduler.add_job(func=check_and_send_notifications, trigger="interval", hours=24)
     scheduler.start()
     from app.reports import generate_monthly_financial_report
     from datetime import datetime

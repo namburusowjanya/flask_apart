@@ -9,11 +9,9 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta
 from app import db
 from app.models import (
-    User, Flat, MaintenanceBill, Payment,
-    Expense, FinancialReport, CategoryBudget,Notification
-)
+    User, Flat, MaintenanceBill,
+    Expense, FinancialReport, CategoryBudget)
 from app.uploads import save_receipt
-from app.utils import notify_late_payment
 main_bp = Blueprint('main', __name__, url_prefix='')
 
 # --- authentication decorator ---
@@ -36,15 +34,13 @@ def flats_info():
     flats = Flat.query.all()
     flats_data = []
     for flat in flats:
-        # Use the Flat model's field directly instead of MaintenanceBill
-        status = flat.maintenance_status if flat.maintenance_status else "No Data"
         flats_data.append({
             'flat_id': flat.flat_id,
             'flat_number': flat.flat_number,
             'owner_name': flat.owner_name,
-            'contact': flat.contact,
-            'email': flat.email or 'N/A',
-            'maintenance_status': status
+            'owner_contact': flat.owner_contact,
+            'tennant_name': flat.tennant_name,
+            'tennant_contact': flat.tennant_contact
         })
     return render_template('total_flats.html', flats=flats_data)
 
@@ -63,9 +59,9 @@ def save_flat():
 
     flat.flat_number = request.form.get('flat_number')
     flat.owner_name = request.form.get('owner_name')
-    flat.contact = request.form.get('contact')
-    flat.email = request.form.get('email')
-    flat.maintenance_status = request.form.get('maintenance_status')
+    flat.owner_contact = request.form.get('owner_contact')
+    flat.tennant_name = request.form.get('tennant_name')
+    flat.tennant_contact = request.form.get('tennant_contact')
 
     try:
         db.session.commit()
@@ -84,140 +80,10 @@ def delete_flat(flat_id):
     flash('Flat successfully deleted!', 'success')
     return redirect(url_for('main.flats_info'))
 
-@main_bp.route('/payments',methods=['GET'])
-@login_required
-def payments():
-    all_payments = Payment.query.join(MaintenanceBill).join(Flat).order_by(Payment.payment_date.desc()).all()
-    return render_template('payment.html', payments=all_payments)
-
-@main_bp.route('/add_payments', methods=['POST'])
-@login_required
-def add_payments():
-    try:
-        flat_no = request.form.get('flat_no')
-        owner = request.form.get('owner')
-        amount = request.form.get('amount')
-        status = request.form.get('status')
-        date_str = request.form.get('date')
-        mode = request.form.get('mode')
-        receipt_no = request.form.get('receipt_no')
-
-        if not all([flat_no, owner, amount, status]):
-            flash("Please fill in all required fields.", "error")
-            return redirect(url_for('main.payments'))
-
-        # Convert amount safely
-        try:
-            amount = float(amount)
-        except ValueError:
-            flash("Invalid amount format.", "error")
-            return redirect(url_for('main.payments'))
-
-        # If paid, require and parse date
-        if status.lower() == 'paid':
-            if not date_str:
-                flash("Date is required for paid payments.", "error")
-                return redirect(url_for('main.payments'))
-            try:
-                payment_date = datetime.strptime(date_str, '%Y-%m-%d')
-            except ValueError:
-                flash("Invalid date format.", "error")
-                return redirect(url_for('main.payments'))
-        else:
-            payment_date = None
-
-        # Get flat
-        flat = Flat.query.filter_by(flat_number=flat_no).first()
-        if not flat:
-            flash(f"Flat number {flat_no} not found.", "error")
-            return redirect(url_for('main.payments'))
-
-        # Determine month for bill
-        month_str = payment_date.strftime('%Y-%m') if payment_date else datetime.now().strftime('%Y-%m')
-
-        # Find or create bill
-        bill = MaintenanceBill.query.filter_by(flat_id=flat.flat_id, month=month_str).first()
-        if not bill:
-            bill = MaintenanceBill(flat_id=flat.flat_id, month=month_str, base_amount=amount, status='Pending')
-            db.session.add(bill)
-            db.session.commit()
-
-        # Only add payment record if status is paid
-        if status.lower() == 'paid':
-            payment = Payment(
-                bill_id=bill.bill_id,
-                amount=amount,
-                payment_date=payment_date,
-                method=mode if mode else None,
-                receipt_number=receipt_no if receipt_no else None
-            )
-            db.session.add(payment)
-
-        # Update bill status
-        bill.status = 'Paid' if status.lower() == 'paid' else 'Pending'
-
-        db.session.commit()
-        flash("Payment record added successfully.", "success")
-        return redirect(url_for('main.payments'))
-    except Exception as e:
-        current_app.logger.error(f"Error adding payment: {e}", exc_info=True)
-        flash("Internal server error. Please try again.", "error")
-        return redirect(url_for('main.payments'))
-
 @main_bp.route("/pending-dues")
 def pending_dues():
     dues = MaintenanceBill.query.filter_by(status="Pending").all()
     return render_template("pending_dues.html", dues=dues)
-
-@main_bp.route('/notifications', methods=['GET', 'POST'])
-@login_required
-def notifications():
-    flats = Flat.query.all()
-    sent_notifications = Notification.query.order_by(Notification.date.desc()).all()
-    if request.method == 'POST':
-        send_type = request.form.get('type')
-        subject = request.form.get('subject')
-        message = request.form.get('message')
-
-        if not subject or not message:
-            flash("Subject and message are required.", "danger")
-            return render_template('notifications.html', flats=flats)
-
-        if send_type == 'all':
-            status = "Delivered"
-            try:
-                for flat in flats:
-                    notify_late_payment(flat.email, subject, message)
-            except Exception as e:
-                status = f"Failed: {e}"
-            new_notification = Notification(
-                recipient="All",
-                message=f"{subject}\n{message}",
-                status=status
-            )
-            db.session.add(new_notification)
-
-        elif send_type == 'individual':
-            flat_number = request.form.get('flat_number')
-            flat = Flat.query.filter_by(flat_number=flat_number).first()
-            if not flat:
-                flash("Flat not found", "danger")
-                return render_template('notifications.html', flats=flats,sent_notifications=sent_notifications)
-            status = "Delivered"
-            try:
-                notify_late_payment(flat.email, subject, message)
-            except Exception as e:
-                status = f"Failed: {e}"
-            new_notification = Notification(
-                recipient=f"Flat {flat_number}",
-                message=f"{subject}\n{message}",
-                status=status)
-            db.session.add(new_notification)
-        db.session.commit()
-        flash(f"Notification sent to Flat {flat_number}.", "success")
-        return redirect(url_for('main.notifications'))
-        
-    return render_template('notifications.html', flats=flats)
 
 @main_bp.route('/update_bill_status/<int:bill_id>', methods=['POST'])
 @login_required
@@ -247,7 +113,6 @@ def edit_bill_amount(bill_id):
         return jsonify({"error": "Missing JSON data"}), 400
 
     base_amount = data.get('base_amount')
-    late_fee = data.get('late_fee')
     status = data.get('status')
 
     # Validate base_amount
@@ -259,15 +124,6 @@ def edit_bill_amount(bill_id):
         except ValueError:
             return jsonify({"error": "Invalid base amount"}), 400
 
-    # Validate late_fee
-    if late_fee is not None:
-        try:
-            late_fee = float(late_fee)
-            if late_fee < 0:
-                return jsonify({"error": "Late fee cannot be negative"}), 400
-        except ValueError:
-            return jsonify({"error": "Invalid late fee"}), 400
-
     # Normalize and validate status
     if status is not None:
         status = status.strip().title()  # Convert to 'Paid' or 'Pending'
@@ -277,8 +133,6 @@ def edit_bill_amount(bill_id):
     # Update fields if provided
     if base_amount is not None:
         bill.base_amount = base_amount
-    if late_fee is not None:
-        bill.late_fee = late_fee
     if status is not None:
         bill.status = status
 
@@ -297,14 +151,12 @@ def expenses():
 @login_required
 def add_expense():
     try:
-        vendor = request.form['vendor']
         category = request.form['category']
         amount = float(request.form['amount'])
         date_str = request.form['date']
         date = datetime.strptime(date_str, '%Y-%m-%d').date()
 
         new_expense = Expense(
-            vendor=vendor,
             category=category,
             amount=amount,
             date=date
@@ -333,14 +185,14 @@ def maintenance_bills():
 def add_maintenance_bill():
     flat_number = request.form['flat_number']
     base_amount = float(request.form['base_amount'])
-    late_fee = float(request.form['late_fee'])
     month = request.form['month']
+    method = request.form['method']
 
     flat = Flat.query.filter_by(flat_number=flat_number).first()
     if not flat:
         return "Flat not found", 404
 
-    new_bill = MaintenanceBill(flat_id=flat.flat_id, base_amount=base_amount, late_fee=late_fee, month=month, status='Pending')
+    new_bill = MaintenanceBill(flat_id=flat.flat_id, base_amount=1500, month=month, status='Pending', method=method)
     db.session.add(new_bill)
     db.session.commit()
 
@@ -356,26 +208,6 @@ def reports():
     else:
         reports = FinancialReport.query.order_by(FinancialReport.month.desc()).all()
     return render_template('reports.html', reports=reports, selected_month=month)
-
-# @main_bp.route('/send_notification/<int:flat_number>', methods=['GET', 'POST'])
-# @login_required
-# def send_notification(flat_number):
-#     flat = Flat.query.filter_by(flat_number=flat_number)get_or_404() 
-
-#     if request.method == 'POST':
-#         subject = request.form.get('subject')
-#         message = request.form.get('message')
-
-#         if not subject or not message:
-#             flash("Subject and message are required", "danger")
-#             return redirect(request.url)
-
-#         from app.utils import notify_tenant
-#         notify_tenant(flat.email, flat.contact, subject, message)
-#         flash("Notification sent successfully!", "success")
-#         return redirect(url_for('main.flats_info'))
-
-#     return render_template('notifications.html', flat=flat)
 
 @main_bp.route('/generate-financial-report', methods=['GET'])
 @login_required
@@ -405,3 +237,92 @@ def download_report(month):
         return "Report not found", 404
 
     return send_from_directory(folder_path, filename, as_attachment=True)
+
+
+@main_bp.route('/add_advance_payment', methods=['POST'])
+@login_required
+def add_advance_payment():
+    flat_no = request.form.get('flat_no')
+    months_paid_for = int(request.form.get('months_paid_for'))
+    start_month = request.form.get('start_month')  # "YYYY-MM"
+    amount = float(request.form.get('amount'))
+    method = request.form.get('method')
+    receipt_no = request.form.get('receipt_no')
+
+    # Get flat
+    flat = Flat.query.filter_by(flat_number=flat_no).first()
+    if not flat:
+        flash("Flat not found.", "error")
+        return redirect(url_for('main.payments'))
+
+    # Save advance payment
+    adv_payment = AdvancePayment(
+        flat_id=flat.flat_id,
+        start_month=start_month,
+        months_paid_for=months_paid_for,
+        total_amount=amount,
+        method=method,
+        receipt_number=receipt_no
+    )
+    db.session.add(adv_payment)
+
+    # Mark each month's bill as Paid
+    year, month = map(int, start_month.split('-'))
+    monthly_amount = amount / months_paid_for
+
+    for i in range(months_paid_for):
+        bill_month = f"{year}-{str(month).zfill(2)}"
+        bill = MaintenanceBill.query.filter_by(flat_id=flat.flat_id, month=bill_month).first()
+
+        if not bill:
+            bill = MaintenanceBill(flat_id=flat.flat_id, month=bill_month, base_amount=monthly_amount, status='Paid')
+            db.session.add(bill)
+        else:
+            bill.status = 'Paid'
+
+        # Create Payment record for each month
+        payment_date = datetime.now().date()
+        payment = Payment(bill_id=bill.bill_id, amount=monthly_amount, payment_date=payment_date, method=method, receipt_number=receipt_no)
+        db.session.add(payment)
+
+        # Increment month/year
+        month += 1
+        if month > 12:
+            month = 1
+            year += 1
+
+    db.session.commit()
+    flash("Advance payment recorded successfully.", "success")
+    return redirect(url_for('main.advance_payment'))
+
+@main_bp.route('/credits', methods=['GET'])
+@login_required
+def credits_page():
+    flats = Flat.query.all()
+    credits = Credit.query.order_by(Credit.created_at.desc()).all()
+    return render_template('credits.html', flats=flats, credits=credits)
+
+@main_bp.route('/add_credit', methods=['POST'])
+@login_required
+def add_credit():
+    flat_no = request.form.get('flat_no')
+    amount = request.form.get('amount')
+    reason = request.form.get('reason')
+
+    flat = Flat.query.filter_by(flat_number=flat_no).first()
+    if not flat:
+        flash("Flat not found.", "error")
+        return redirect(url_for('main.credits_page'))
+
+    try:
+        amount = float(amount)
+    except ValueError:
+        flash("Invalid amount.", "error")
+        return redirect(url_for('main.credits_page'))
+
+    credit = Credit(flat_id=flat.flat_id, amount=amount, reason=reason)
+    db.session.add(credit)
+    db.session.commit()
+
+    flash("Credit added successfully.", "success")
+    return redirect(url_for('main.credits_page'))

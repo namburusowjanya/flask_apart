@@ -234,9 +234,11 @@
 
     <h2>Log New Expense</h2>
     <form method="POST" action="{{ url_for('main.add_expense') }}">
-      <input type="text" name="vendor" placeholder="Vendor Name" required>
       <select name="category" required>
         <option value="">Select Category</option>
+        <option value="Generator">Generator</option>
+        <option value="Lift">Lift</option>
+        <option value="Common Maintenance">Common Maintenance</option>
         <option value="Plumbing">Plumbing</option>
         <option value="Security">Security</option>
         <option value="Electricity">Electricity</option>
@@ -255,7 +257,6 @@
         <tr>
           <th>ID</th>
           <th>Date</th>
-          <th>Vendor</th>
           <th>Category</th>
           <th>Amount (₹)</th>
         </tr>
@@ -265,7 +266,6 @@
         <tr class="{% if exp.amount > 5000 %}high-expense{% endif %}">
           <td>{{ exp.expense_id }}</td>
           <td>{{ exp.date.strftime('%Y-%m-%d') }}</td>
-          <td>{{ exp.vendor }}</td>
           <td>{{ exp.category }}</td>
           <td>{{ '{:,.2f}'.format(exp.amount) }}</td>
         </tr>

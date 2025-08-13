@@ -120,10 +120,19 @@
   <!-- Add Maintenance Bill Form -->
   <form method="POST" action="{{ url_for('main.add_maintenance_bill') }}">
     <label>Flat Number: <input type="text" name="flat_number" required></label>
-    <label>Base Amount: <input type="number" name="base_amount" step="0.01" required></label>
-    <label>Late Fee: <input type="number" name="late_fee" step="0.01" required></label>
+    <label>Base Amount: <input type="number" name="base_amount" required></label>
     <label>Month:
       <input type="month" name="month" value="{{ current_month }}" required>
+    </label>
+    <label>
+      Payment Method:
+      <select name="method" required>
+        <option value="Select mode">Select</option>
+        <option value="Online">Online</option>
+        <option value="Cash">Cash</option>
+        <option value="None">None</option>
+      </select>
+  
     </label>
     <button type="submit">Add Bill</button>
   </form>
@@ -136,9 +145,9 @@
         <th>Flat</th>
         <th>Month</th>
         <th>Base Amount</th>
-        <th>Late Fee</th>
         <th>Status</th>
         <th>Actions</th>
+        <th>Method</th>
       </tr>
     </thead>
     <tbody>
@@ -148,7 +157,6 @@
         <td>{{ bill.flat.flat_number }}</td>
         <td>{{ bill.month }}</td>
         <td class="amount">{{ "%.2f"|format(bill.base_amount) }}</td>
-        <td class="late_fee">{{ "%.2f"|format(bill.late_fee) }}</td>
         <td class="status {{ bill.status|lower }}">{{ bill.status }}</td>
         <td>
           <button class="action-btn edit-btn" onclick="editRow(this)">Edit</button>
@@ -156,6 +164,7 @@
           <button class="action-btn mark-paid-btn" onclick="markPaid(this)">Mark Paid</button>
           {% endif %}
         </td>
+        <td>{{ bill.method }}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -166,21 +175,19 @@
       const row = btn.closest("tr");
       const billId = row.dataset.id;
       const amountCell = row.querySelector(".amount");
-      const lateFeeCell = row.querySelector(".late_fee");
       const statusCell = row.querySelector(".status");
 
       const currentAmount = parseFloat(amountCell.textContent);
-      const currentLateFee = parseFloat(lateFeeCell.textContent);
       const currentStatus = statusCell.textContent.trim();
 
       const newAmount = prompt("Enter new base amount:", currentAmount);
       if (newAmount === null || isNaN(newAmount)) return alert("Invalid base amount");
 
-      const newLateFee = prompt("Enter new late fee:", currentLateFee);
-      if (newLateFee === null || isNaN(newLateFee)) return alert("Invalid late fee");
-
       const newStatus = prompt("Enter new status (Paid or Pending):", currentStatus);
       if (newStatus !== "Paid" && newStatus !== "Pending") return alert("Invalid status");
+
+      const method = prompt("Enter payment method (Online or Cash):", row.querySelector("td:nth-child(7)").textContent.trim());
+      if (method !== "Online" && method !== "Cash") return alert("Invalid payment method");
 
       fetch(`/edit_bill_amount/${billId}`, {
         method: 'POST',
@@ -190,7 +197,6 @@
         },
         body: JSON.stringify({
           base_amount: parseFloat(newAmount),
-          late_fee: parseFloat(newLateFee),
           status: newStatus
         })
       })
@@ -198,7 +204,6 @@
       .then(data => {
         if (data.message) {
           amountCell.textContent = parseFloat(newAmount).toFixed(2);
-          lateFeeCell.textContent = parseFloat(newLateFee).toFixed(2);
           statusCell.textContent = newStatus;
           statusCell.className = `status ${newStatus.toLowerCase()}`;
 

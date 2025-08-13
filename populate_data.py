@@ -1,13 +1,10 @@
 from app import create_app, db
-from app.models import Payment, Expense, FinancialReport, MaintenanceBill
+from app.models import Expense, FinancialReport, MaintenanceBill
 from datetime import datetime
 
 app = create_app()
 
 with app.app_context():
-    # Simulate a payment
-    p = Payment(bill_id=1, amount=1200.0, mode="Online")
-    db.session.add(p)
 
     # Add test expense
     e = Expense(vendor="Electrician", category="repairs", amount=4500.0,
