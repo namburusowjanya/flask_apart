@@ -65,7 +65,7 @@
 
         .card.red { border-left-color: #e74c3c; }
         .card.green { border-left-color: #2ecc71; }
-
+        .card.blue{ border-left-color: yellow; }
         .quick-actions {
             padding: 20px;
             display: flex;
@@ -150,9 +150,12 @@
     <div class="card green">
         <a href="{{ url_for('main.flats_info') }}"><b>Total Flats</b></a>
     </div>
-<div class="card">
-  <a href="{{ url_for('main.expenses') }}"><b>Expenses</b></a>
-</div>
+    <div class="card">
+        <a href="{{ url_for('main.expenses') }}"><b>Expenses</b></a>
+    </div>
+    <div class="card blue">
+        <a href="{{ url_for('main.advanced_payments') }}"><b>Advanced Payments</b></a>
+    </div>
 
     <div class="card red">
         <a href="{{ url_for('main.pending_dues') }}"><b>Pending Dues</b></a>

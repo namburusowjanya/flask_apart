@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from app import db
 from app.models import (
     User, Flat, MaintenanceBill,
-    Expense, FinancialReport, CategoryBudget)
+    Expense, FinancialReport, CategoryBudget,AdvancePayment,Credit)
 from app.uploads import save_receipt
 main_bp = Blueprint('main', __name__, url_prefix='')
 
@@ -80,10 +80,10 @@ def delete_flat(flat_id):
     flash('Flat successfully deleted!', 'success')
     return redirect(url_for('main.flats_info'))
 
-@main_bp.route("/pending-dues")
-def pending_dues():
-    dues = MaintenanceBill.query.filter_by(status="Pending").all()
-    return render_template("pending_dues.html", dues=dues)
+# @main_bp.route("/pending-dues")
+# def pending_dues():
+#     dues = MaintenanceBill.query.filter_by(status="Pending").all()
+#     return render_template("pending_dues.html", dues=dues)
 
 @main_bp.route('/update_bill_status/<int:bill_id>', methods=['POST'])
 @login_required
@@ -238,62 +238,79 @@ def download_report(month):
 
     return send_from_directory(folder_path, filename, as_attachment=True)
 
+@main_bp.route("/advanced-payments")
+@login_required
+def advanced_payments():
+    flats = Flat.query.all() 
+    advance_payments = AdvancePayment.query.order_by(AdvancePayment.payment_date.desc()).all()
+    return render_template(
+        "advance_payment.html",flats=flats,advance_payments=advance_payments)
 
-@main_bp.route('/add_advance_payment', methods=['POST'])
+@main_bp.route("/add_advance_payment", methods=["POST"])
 @login_required
 def add_advance_payment():
-    flat_no = request.form.get('flat_no')
-    months_paid_for = int(request.form.get('months_paid_for'))
-    start_month = request.form.get('start_month')  # "YYYY-MM"
-    amount = float(request.form.get('amount'))
-    method = request.form.get('method')
-    receipt_no = request.form.get('receipt_no')
+    flat_no = request.form.get("flat_no")
+    start_month = request.form.get("start_month")
+    months_paid_for = int(request.form.get("months_paid_for"))
+    monthly_amount = float(request.form.get("monthly_amount"))
+    total_amount = float(request.form.get("amount"))
+    method = request.form.get("method")
+    receipt_no = request.form.get("receipt_no")
 
-    # Get flat
     flat = Flat.query.filter_by(flat_number=flat_no).first()
     if not flat:
-        flash("Flat not found.", "error")
-        return redirect(url_for('main.payments'))
+        flash("Flat not found.", "danger")
+        return redirect(url_for("main.advanced_payments"))
 
-    # Save advance payment
     adv_payment = AdvancePayment(
         flat_id=flat.flat_id,
         start_month=start_month,
         months_paid_for=months_paid_for,
-        total_amount=amount,
+        total_amount=total_amount,
         method=method,
         receipt_number=receipt_no
     )
     db.session.add(adv_payment)
-
-    # Mark each month's bill as Paid
-    year, month = map(int, start_month.split('-'))
-    monthly_amount = amount / months_paid_for
-
-    for i in range(months_paid_for):
-        bill_month = f"{year}-{str(month).zfill(2)}"
-        bill = MaintenanceBill.query.filter_by(flat_id=flat.flat_id, month=bill_month).first()
-
-        if not bill:
-            bill = MaintenanceBill(flat_id=flat.flat_id, month=bill_month, base_amount=monthly_amount, status='Paid')
-            db.session.add(bill)
-        else:
-            bill.status = 'Paid'
-
-        # Create Payment record for each month
-        payment_date = datetime.now().date()
-        payment = Payment(bill_id=bill.bill_id, amount=monthly_amount, payment_date=payment_date, method=method, receipt_number=receipt_no)
-        db.session.add(payment)
-
-        # Increment month/year
-        month += 1
-        if month > 12:
-            month = 1
-            year += 1
-
     db.session.commit()
     flash("Advance payment recorded successfully.", "success")
-    return redirect(url_for('main.advance_payment'))
+    return redirect(url_for("main.advanced_payments"))
+@main_bp.route("/pending-dues")
+@login_required
+def pending_dues():
+    current_month = request.args.get("month")
+    if not current_month:
+        current_month = datetime.today().strftime("%Y-%m")
+
+    flats = Flat.query.all()
+    dues = []
+
+    for flat in flats:
+        pending_bills = MaintenanceBill.query.filter_by(flat_id=flat.flat_id, status="Pending").all()
+        advances = AdvancePayment.query.filter_by(flat_id=flat.flat_id).all()
+
+        for bill in pending_bills:
+            covered = False
+            advance_info = []
+
+            for adv in advances:
+                year, month = map(int, adv.start_month.split("-"))
+                for i in range(adv.months_paid_for):
+                    covered_month = f"{year}-{str(month).zfill(2)}"
+                    if covered_month == bill.month:
+                        covered = True
+                    advance_info.append(covered_month)  
+                    month += 1
+                    if month > 12:
+                        month = 1
+                        year += 1
+
+            if not covered:
+                dues.append({
+                    "bill": bill,
+                    "advance_months": ", ".join(advance_info) if advance_info else "-"
+                })
+
+    return render_template("pending_dues.html", dues=dues)
 
 @main_bp.route('/credits', methods=['GET'])
 @login_required

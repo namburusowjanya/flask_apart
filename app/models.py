@@ -80,8 +80,10 @@ class AdvancePayment(db.Model):
     total_amount = db.Column(db.Float, nullable=False)
     payment_date = db.Column(db.Date, default=datetime.utcnow)
     method = db.Column(db.String(50))
+    receipt_number = db.Column(db.String(100))  
 
-    flat = db.relationship('Flat', backref=db.backref('advance_payments', lazy=True))
+    flat = db.relationship('Flat', backref=db.backref('advanced_payments', lazy=True))
+
 
 class Credit(db.Model):
     __tablename__ = 'credits'

@@ -20,6 +20,14 @@
     th { background:#ecfdf5; color:#0f766e; font-weight:600; }
     .muted { color:#6b7280; font-size:13px; }
     .small { font-size:13px; color:#374151 }
+        .back-btn {
+      margin-top: 20px;display: inline-block;
+      background-color: #10b981;
+      color: white;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 6px;
+    }
   </style>
 </head>
 <body>
@@ -161,5 +169,6 @@
       }
     });
   </script>
+  <a class="back-btn" href="{{ url_for('main.dashboard') }}">← Back to Dashboard</a>
 </body>
 </html>

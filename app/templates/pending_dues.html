@@ -6,37 +6,40 @@
 </head>
 <body class="container mt-5">
 
-    <h2 class="mb-4">Pending Dues</h2>
+<h2 class="mb-4">Pending Dues</h2>
 
-    {% if dues %}
-    <table class="table table-bordered table-striped">
-        <thead class="table-dark">
-            <tr>
-                <th>Flat Number</th>
-                <th>Owner Name</th>
-                <th>Month</th>
-                <th>Base Amount</th>
-                <th>Total</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for due in dues %}
-            <tr>
-                <td>{{ due.flat.flat_number }}</td>
-                <td>{{ due.flat.owner_name }}</td>
-                <td>{{ due.month }}</td>
-                <td>₹{{ "%.2f"|format(due.base_amount) }}</td>
-                <td>₹{{ "%.2f"|format(due.base_amount) }}</td>
-                <td class="text-danger">{{ due.status }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <div class="alert alert-success">No pending dues! 🎉</div>
-    {% endif %}
+{% if dues %}
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>Flat Number</th>
+            <th>Owner Name</th>
+            <th>Month</th>
+            <th>Base Amount</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Prepaid Months</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in dues %}
+        <tr>
+            <td>{{ item.bill.flat.flat_number }}</td>
+            <td>{{ item.bill.flat.owner_name }}</td>
+            <td>{{ item.bill.month }}</td>
+            <td>₹{{ "%.2f"|format(item.bill.base_amount) }}</td>
+            <td>₹{{ "%.2f"|format(item.bill.base_amount) }}</td>
+            <td class="text-danger">{{ item.bill.status }}</td>
+            <td>{{ item.advance_months }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="alert alert-success">No pending dues! 🎉</div>
+{% endif %}
 
-    <a href="/dashboard" class="btn btn-primary mt-3">Back to Dashboard</a>
+<a href="/dashboard" class="btn btn-primary mt-3">Back to Dashboard</a>
+
 </body>
 </html>
