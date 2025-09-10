@@ -116,9 +116,13 @@
     <h2>Maintenance Bills - {{ current_month }}</h2>
     <a class="download-btn" href="{{ url_for('main.download_report', month=current_month) }}">Download Report</a>
   </div>
-
+  <form method="GET" action="{{ url_for('main.maintenance_bills') }}" style="margin-bottom: 20px;">
+    <label for="filter-month">Filter by Month:</label>
+    <input type="month" id="filter-month" name="month" value="{{ current_month }}">
+    <button type="submit">Filter</button>
+  </form>
   <!-- Add Maintenance Bill Form -->
-  <form method="POST" action="{{ url_for('main.add_maintenance_bill') }}">
+  <form method="POST" action="{{ url_for('main.maintenance_bills') }}">
     <label>Flat Number: <input type="text" name="flat_number" required></label>
     <label>Base Amount: <input type="number" name="base_amount" required></label>
     <label>Month:

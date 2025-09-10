@@ -80,11 +80,6 @@ def delete_flat(flat_id):
     flash('Flat successfully deleted!', 'success')
     return redirect(url_for('main.flats_info'))
 
-# @main_bp.route("/pending-dues")
-# def pending_dues():
-#     dues = MaintenanceBill.query.filter_by(status="Pending").all()
-#     return render_template("pending_dues.html", dues=dues)
-
 @main_bp.route('/update_bill_status/<int:bill_id>', methods=['POST'])
 @login_required
 def update_bill_status(bill_id):
@@ -170,15 +165,51 @@ def add_expense():
 
     return redirect(url_for('main.expenses'))
 
-@main_bp.route('/maintenance_bills')
+@main_bp.route('/maintenance_bill')
 @login_required
 def maintenance_bills():
     current_month = request.args.get('month')
     if not current_month:
         current_month = datetime.today().strftime('%Y-%m')
 
+    # You can call the bill generator here if you want bills to always be up to date
+    generate_bills_from_advance()
+
     bills = MaintenanceBill.query.filter_by(month=current_month).join(Flat).all()
     return render_template('maintainance.html', bills=bills, current_month=current_month)
+
+def generate_bills_from_advance():
+    advance_payments = AdvancePayment.query.all()
+    for adv in advance_payments:
+        flat_id = adv.flat_id
+        monthly_rent = adv.total_amount / adv.months_paid_for
+
+        year, month = map(int, adv.start_month.split('-'))
+
+        for _ in range(adv.months_paid_for):
+            current_month = f"{year}-{str(month).zfill(2)}"
+
+            # Check if a bill already exists for this flat + month
+            existing_bill = MaintenanceBill.query.filter_by(
+                flat_id=flat_id, month=current_month
+            ).first()
+
+            if not existing_bill:
+                bill = MaintenanceBill(
+                    flat_id=flat_id,
+                    base_amount=monthly_rent,
+                    month=current_month,
+                    status="Paid",
+                    method=adv.method
+                )
+                db.session.add(bill)
+
+            month += 1
+            if month > 12:
+                month = 1
+                year += 1
+
+    db.session.commit()
 
 @main_bp.route('/add_maintenance_bill', methods=['POST'])
 @login_required
@@ -192,7 +223,13 @@ def add_maintenance_bill():
     if not flat:
         return "Flat not found", 404
 
-    new_bill = MaintenanceBill(flat_id=flat.flat_id, base_amount=1500, month=month, status='Pending', method=method)
+    new_bill = MaintenanceBill(
+        flat_id=flat.flat_id,
+        base_amount=base_amount,
+        month=month,
+        status='Pending',
+        method=method
+    )
     db.session.add(new_bill)
     db.session.commit()
 
@@ -273,44 +310,60 @@ def add_advance_payment():
     db.session.add(adv_payment)
     db.session.commit()
     flash("Advance payment recorded successfully.", "success")
+    adv_payment = AdvancePayment(
+        flat_id=flat.flat_id,
+        start_month=start_month,
+        months_paid_for=months_paid_for,
+        total_amount=total_amount,
+        method=method,
+        receipt_number=receipt_no
+    )
+    db.session.add(adv_payment)
+    db.session.commit()
+    generate_bills_from_advance()
+    flash("Advance payment recorded and bills generated successfully.", "success")
     return redirect(url_for("main.advanced_payments"))
 @main_bp.route("/pending-dues")
 @login_required
 def pending_dues():
-    current_month = request.args.get("month")
-    if not current_month:
-        current_month = datetime.today().strftime("%Y-%m")
+    selected_month = request.args.get("month", datetime.today().strftime("%Y-%m"))
 
     flats = Flat.query.all()
-    dues = []
+    pending_data = []
 
     for flat in flats:
-        pending_bills = MaintenanceBill.query.filter_by(flat_id=flat.flat_id, status="Pending").all()
-        advances = AdvancePayment.query.filter_by(flat_id=flat.flat_id).all()
+        flat_id = flat.flat_id
 
-        for bill in pending_bills:
-            covered = False
-            advance_info = []
+        # 1. Get all advance payments for the flat
+        advances = AdvancePayment.query.filter_by(flat_id=flat_id).all()
 
-            for adv in advances:
-                year, month = map(int, adv.start_month.split("-"))
-                for i in range(adv.months_paid_for):
-                    covered_month = f"{year}-{str(month).zfill(2)}"
-                    if covered_month == bill.month:
-                        covered = True
-                    advance_info.append(covered_month)  
-                    month += 1
-                    if month > 12:
-                        month = 1
-                        year += 1
+        # 2. Build set of prepaid months
+        prepaid_months = set()
+        for adv in advances:
+            year, month = map(int, adv.start_month.split('-'))
+            for _ in range(adv.months_paid_for):
+                prepaid_months.add(f"{year}-{str(month).zfill(2)}")
+                month += 1
+                if month > 12:
+                    month = 1
+                    year += 1
 
-            if not covered:
-                dues.append({
-                    "bill": bill,
-                    "advance_months": ", ".join(advance_info) if advance_info else "-"
-                })
+        # 3. If the selected month is NOT in prepaid months, it's pending
+        if selected_month not in prepaid_months:
+            # Create a pseudo bill just for display purposes
+            pseudo_bill = MaintenanceBill(
+                flat_id=flat_id,
+                base_amount=1500.0,  # Default rent
+                month=selected_month,
+                status="Pending",
+                method=""
+            )
+            pending_data.append({
+                "flat": flat,
+                "bills": [pseudo_bill]
+            })
 
-    return render_template("pending_dues.html", dues=dues)
+    return render_template("pending_dues.html", pending_data=pending_data, selected_month=selected_month)
 
 @main_bp.route('/credits', methods=['GET'])
 @login_required

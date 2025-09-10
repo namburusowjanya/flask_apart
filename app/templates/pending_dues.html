@@ -6,37 +6,38 @@
 </head>
 <body class="container mt-5">
 
-<h2 class="mb-4">Pending Dues</h2>
+<h2>Pending Dues</h2>
+<form method="get" action="/pending-dues" class="mb-4">
+  <label for="month">Select Month:</label>
+  <input type="month" id="month" name="month" value="{{ selected_month }}">
+  <button type="submit" class="btn btn-sm btn-primary">Filter</button>
+</form>
 
-{% if dues %}
-<table class="table table-bordered table-striped">
-    <thead class="table-dark">
-        <tr>
-            <th>Flat Number</th>
-            <th>Owner Name</th>
-            <th>Month</th>
-            <th>Base Amount</th>
-            <th>Total</th>
-            <th>Status</th>
-            <th>Prepaid Months</th>
-        </tr>
+{% if pending_data %}
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Flat</th>
+        <th>Owner</th>
+        <th>Month</th>
+        <th>Amount</th>
+      </tr>
     </thead>
     <tbody>
-        {% for item in dues %}
+      {% for item in pending_data %}
+        {% for bill in item.bills %}
         <tr>
-            <td>{{ item.bill.flat.flat_number }}</td>
-            <td>{{ item.bill.flat.owner_name }}</td>
-            <td>{{ item.bill.month }}</td>
-            <td>₹{{ "%.2f"|format(item.bill.base_amount) }}</td>
-            <td>₹{{ "%.2f"|format(item.bill.base_amount) }}</td>
-            <td class="text-danger">{{ item.bill.status }}</td>
-            <td>{{ item.advance_months }}</td>
+          <td>{{ item.flat.flat_number }}</td>
+          <td>{{ item.flat.owner_name }}</td>
+          <td>{{ bill.month }}</td>
+          <td>₹{{ "%.2f"|format(bill.base_amount) }}</td>
         </tr>
         {% endfor %}
+      {% endfor %}
     </tbody>
-</table>
+  </table>
 {% else %}
-<div class="alert alert-success">No pending dues! 🎉</div>
+  <p class="text-success">No pending dues 🎉</p>
 {% endif %}
 
 <a href="/dashboard" class="btn btn-primary mt-3">Back to Dashboard</a>
