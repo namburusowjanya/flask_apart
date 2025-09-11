@@ -138,8 +138,69 @@ def edit_bill_amount(bill_id):
 @main_bp.route('/expenses', methods=['GET'])
 @login_required
 def expenses():
-    all_expenses = Expense.query.order_by(Expense.date.desc()).all()
-    return render_template('expenses.html', expenses=all_expenses)
+    from datetime import datetime
+
+    # Default to current month
+    selected_month = datetime.today()
+
+    # Get first and last day of the month
+    start_date = selected_month.replace(day=1)
+
+    if start_date.month == 12:
+        end_date = start_date.replace(year=start_date.year + 1, month=1)
+    else:
+        end_date = start_date.replace(month=start_date.month + 1)
+
+    # Query only expenses for the current month
+    expenses = Expense.query.filter(
+        Expense.date >= start_date,
+        Expense.date < end_date
+    ).order_by(Expense.date.desc()).all()
+
+    # Format for <input type="month"> value
+    current_month = selected_month.strftime('%Y-%m')
+
+    return render_template('expenses.html', expenses=expenses, current_month=current_month)
+    # all_expenses = Expense.query.order_by(Expense.date.desc()).all()
+    # return render_template('expenses.html', expenses=all_expenses)
+
+
+@main_bp.route('/filter_expenses', methods=['GET'])
+@login_required
+def filter_expenses():
+    # Get month from query string, default to current month
+    month_str = request.args.get('month')
+
+    if month_str:
+        try:
+            # Parse the selected month
+            selected_month = datetime.strptime(month_str, '%Y-%m')
+        except ValueError:
+            # Fallback to current month if parsing fails
+            selected_month = datetime.today()
+    else:
+        # Default: current month
+        selected_month = datetime.today()
+
+    # Get the first day of the selected month
+    start_date = selected_month.replace(day=1)
+
+    # Get the first day of the next month
+    if start_date.month == 12:
+        end_date = start_date.replace(year=start_date.year + 1, month=1)
+    else:
+        end_date = start_date.replace(month=start_date.month + 1)
+
+    # Query expenses within the selected month
+    expenses = Expense.query.filter(
+        Expense.date >= start_date,
+        Expense.date < end_date
+    ).order_by(Expense.date.desc()).all()
+
+    # Format month_str to keep it pre-filled in the filter input
+    current_month = selected_month.strftime('%Y-%m')
+
+    return render_template('expenses.html',expenses=expenses,current_month=current_month)
 
 # Route to add a new expense
 @main_bp.route('/add-expense', methods=['POST'])
@@ -235,34 +296,34 @@ def add_maintenance_bill():
 
     return redirect(url_for('main.maintenance_bills', month=month))
 
-# --- REPORTS page ---
-@main_bp.route('/reports', methods=['GET'])
-@login_required
-def reports():
-    month = request.args.get('month')
-    if month:
-        reports = FinancialReport.query.filter_by(month=month).all()
-    else:
-        reports = FinancialReport.query.order_by(FinancialReport.month.desc()).all()
-    return render_template('reports.html', reports=reports, selected_month=month)
+# # --- REPORTS page ---
+# @main_bp.route('/reports', methods=['GET'])
+# @login_required
+# def reports():
+#     month = request.args.get('month')
+#     if month:
+#         reports = FinancialReport.query.filter_by(month=month).all()
+#     else:
+#         reports = FinancialReport.query.order_by(FinancialReport.month.desc()).all()
+#     return render_template('reports.html', reports=reports, selected_month=month)
 
-@main_bp.route('/generate-financial-report', methods=['GET'])
-@login_required
-def manual_generate_report():
-    month = request.args.get('month')
-    if not month:
-        flash("Please select a month.", "warning")
-        return redirect(url_for('main.reports'))
-    # Check if report already exists
-    existing = FinancialReport.query.filter_by(month=month).first()
-    if existing:
-        flash(f"Report for {month} already exists. Regeneration will overwrite the existing report.", "danger")
-        return redirect(url_for('main.reports', month=month))
+# @main_bp.route('/generate-financial-report', methods=['GET'])
+# @login_required
+# def manual_generate_report():
+#     month = request.args.get('month')
+#     if not month:
+#         flash("Please select a month.", "warning")
+#         return redirect(url_for('main.reports'))
+#     # Check if report already exists
+#     existing = FinancialReport.query.filter_by(month=month).first()
+#     if existing:
+#         flash(f"Report for {month} already exists. Regeneration will overwrite the existing report.", "danger")
+#         return redirect(url_for('main.reports', month=month))
 
-    from app.tasks import generate_monthly_report
-    generate_monthly_report(month)
-    flash(f"Report for {month} generated successfully.", "success")
-    return redirect(url_for('main.reports', month=month))
+#     from app.tasks import generate_monthly_report
+#     generate_monthly_report(month)
+#     flash(f"Report for {month} generated successfully.", "success")
+#     return redirect(url_for('main.reports', month=month))
 
 @main_bp.route('/download-report/<string:month>', methods=['GET'])
 def download_report(month):
@@ -307,22 +368,17 @@ def add_advance_payment():
         method=method,
         receipt_number=receipt_no
     )
+
     db.session.add(adv_payment)
     db.session.commit()
     flash("Advance payment recorded successfully.", "success")
-    adv_payment = AdvancePayment(
-        flat_id=flat.flat_id,
-        start_month=start_month,
-        months_paid_for=months_paid_for,
-        total_amount=total_amount,
-        method=method,
-        receipt_number=receipt_no
-    )
-    db.session.add(adv_payment)
-    db.session.commit()
+
+    # Generate the maintenance bills after committing
     generate_bills_from_advance()
-    flash("Advance payment recorded and bills generated successfully.", "success")
+    flash("Bills generated successfully.", "success")
+
     return redirect(url_for("main.advanced_payments"))
+
 @main_bp.route("/pending-dues")
 @login_required
 def pending_dues():
@@ -396,3 +452,56 @@ def add_credit():
 
     flash("Credit added successfully.", "success")
     return redirect(url_for('main.credits_page'))
+
+def get_previous_month(year, month):
+    if month == 1:
+        return year - 1, 12
+    else:
+        return year, month - 1
+
+def get_opening_balance(year, month):
+    # For simplicity, calculate closing balance of previous month on the fly
+    prev_year, prev_month = get_previous_month(year, month)
+    prev_month_str = f"{prev_year}-{prev_month:02d}"
+
+    # Sum maintenance and expenses for previous month
+    prev_maintenance = sum(b.base_amount for b in MaintenanceBill.query.filter(MaintenanceBill.month.startswith(prev_month_str)).all())
+    prev_expenses = sum(e.amount for e in Expense.query.filter(Expense.date.startswith(prev_month_str)).all())
+
+    # Opening balance of previous month (recursively 0 if no earlier data)
+    if prev_year < 2020:  # arbitrary cutoff to avoid infinite recursion
+        return 0.0
+
+    prev_opening = get_opening_balance(prev_year, prev_month)
+
+    # Closing balance previous month = opening + collected - expenses
+    return prev_opening + prev_maintenance - prev_expenses
+
+
+@main_bp.route('/monthly_report', methods=['GET'])
+def monthly_report():
+    month_str = request.args.get('month', datetime.now().strftime('%Y-%m'))
+    year, month = map(int, month_str.split('-'))
+
+    # Get maintenance bills for the month
+    bills = MaintenanceBill.query.filter(MaintenanceBill.month.startswith(month_str)).all()
+    total_maintenance = sum(b.base_amount for b in bills)
+
+    # Get expenses for the month
+    expenses = Expense.query.filter(Expense.date.startswith(month_str)).all()
+    total_expenses = sum(e.amount for e in expenses)
+
+    # Calculate opening balance from previous month
+    opening_balance = get_opening_balance(year, month)
+
+    # Calculate closing balance for current month
+    closing_balance = opening_balance + total_maintenance - total_expenses
+
+    return render_template('reports.html',
+                           month=month_str,
+                           bills=bills,
+                           expenses=expenses,
+                           total_maintenance=total_maintenance,
+                           total_expenses=total_expenses,
+                           opening_balance=opening_balance,
+                           closing_balance=closing_balance)

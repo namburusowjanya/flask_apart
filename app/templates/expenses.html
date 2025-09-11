@@ -1,281 +1,130 @@
-<!-- <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Expenses - Apartment Maintenance</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      background-color: #f3f4f6;
-    }
+{% extends 'base.html' %}
+{% block title %}Expenses - Apartment Maintenance{% endblock %}
+{% block content %}
 
-    .navbar {
-      background-color: #2c3e50;
-      color: white;
-      padding: 15px;
-      font-weight: bold;
-      text-align: center;
-    }
+<div class="container">
 
-    .container {
-      padding: 30px;
-    }
+  <h2>Log New Expense</h2>
+  <form method="POST" action="{{ url_for('main.add_expense') }}">
+    <input type="text" name="category" placeholder="Enter category" required>
+    <input type="number" name="amount" placeholder="Amount (₹)" step="0.01" required>
+    <input type="date" name="date" required>
+    <button type="submit">Add Expense</button>
+  </form>
 
-    h2 {
-      color: #111827;
-    }
+  <form method="GET" action="{{ url_for('main.filter_expenses') }}" class="mb-4">
+    <label for="filter-month" class="form-label">Filter by Month:</label>
+    <input type="month" id="filter-month" name="month" value="{{ current_month }}" class="form-control d-inline-block" style="width: auto;">
+    <button type="submit" class="btn btn-primary ms-2">Filter</button>
+  </form>
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background-color: white;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
+  <!-- Bills Table -->
+  <table class="table table-bordered table-hover shadow-sm">
+    <thead class="table-success">
+      <tr>
+        <th>Bill ID</th>
+        <th>Date</th>
+        <th>Category</th>
+        <th>Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for exp in expenses %}
+      <tr class="{% if exp.amount > 5000 %}high-expense{% endif %}">
+        <td>{{ exp.expense_id }}</td>
+        <td>{{ exp.date.strftime('%Y-%m-%d') }}</td>
+        <td>{{ exp.category }}</td>
+        <td>{{ '{:,.2f}'.format(exp.amount) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 
-    th, td {
-      padding: 12px;
-      text-align: center;
-      border-bottom: 1px solid #e5e7eb;
-    }
+  <!-- <h2>Monthly Expenses</h2>
+  <table id="expenseTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Date</th>
+        <th>Category</th>
+        <th>Amount (₹)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for exp in expenses %}
+      <tr class="{% if exp.amount > 5000 %}high-expense{% endif %}">
+        <td>{{ exp.expense_id }}</td>
+        <td>{{ exp.date.strftime('%Y-%m-%d') }}</td>
+        <td>{{ exp.category }}</td>
+        <td>{{ '{:,.2f}'.format(exp.amount) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table> -->
 
-    th {
-      background-color: #10b981;
-      color: white;
-    }
+  <a class="back-btn" href="{{ url_for('main.dashboard') }}">← Back to Dashboard</a>
 
-    .btn {
-      padding: 6px 12px;
-      border: none;
-      border-radius: 4px;
-      color: white;
-      cursor: pointer;
-    }
+</div>
 
-    .back-btn {
-      margin-top: 20px;
-      display: inline-block;
-      background-color: #10b981;
-      color: white;
-      padding: 10px 20px;
-      text-decoration: none;
-      border-radius: 6px;
-    }
+<style>
+  .container {
+    padding: 30px;
+  }
+  h2 {
+    color: #111827;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  }
+  th, td {
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  th {
+    background-color: #10b981;
+    color: white;
+  }
+  .high-expense {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    font-weight: bold;
+  }
+  form {
+    background-color: white;
+    padding: 20px;
+    margin-bottom: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+  }
+  form input, form select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+  }
+  form button {
+    background-color: #2563eb;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .back-btn {
+    margin-top: 20px;
+    display: inline-block;
+    background-color: #10b981;
+    color: white;
+    padding: 10px 20px;
+    text-decoration: none;
+    border-radius: 6px;
+  }
+</style>
 
-    .high-expense {
-      background-color: #fee2e2;
-      color: #b91c1c;
-      font-weight: bold;
-    }
-
-    form {
-      background-color: white;
-      padding: 20px;
-      margin-bottom: 30px;
-      border-radius: 10px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
-    }
-
-    form input, form select {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 15px;
-      border-radius: 6px;
-      border: 1px solid #d1d5db;
-    }
-
-    form button {
-      background-color: #2563eb;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-  </style>
-</head>
-<body>
-
-  <div class="navbar">Expense Records - Apartment Society</div>
-
-  <div class="container">
-
-    <h2>Log New Expense</h2>
-    <form method="POST" action="{{ url_for('main.add_expense') }}">
-      <input type="text" name="vendor" placeholder="Vendor Name" required>
-      <select name="category" required>
-        <option value="">Select Category</option>
-        <option value="Plumbing">Plumbing</option>
-        <option value="Security">Security</option>
-        <option value="Electricity">Electricity</option>
-        <option value="Repairs">Repairs</option>
-        <option value="Taxes">Taxes</option>
-        <option value="Other">Other</option>
-      </select>
-      <input type="number" name="amount" placeholder="Amount (₹)" step="0.01" required>
-      <input type="date" name="date" required>
-      <button type="submit">Add Expense</button>
-    </form>
-
-    <h2>Monthly Expenses</h2>
-    <table id="expenseTable">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Date</th>
-          <th>Vendor</th>
-          <th>Category</th>
-          <th>Amount (₹)</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for exp in expenses %}
-        <tr class="{% if exp.amount > 5000 %}high-expense{% endif %}">
-          <td>{{ exp.expense_id }}</td>
-          <td>{{ exp.date.strftime('%Y-%m-%d') }}</td>
-          <td>{{ exp.vendor }}</td>
-          <td>{{ exp.category }}</td>
-          <td>{{ '{:,.2f}'.format(exp.amount) }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-    <a class="back-btn" href="{{ url_for('main.dashboard') }}">← Back to Dashboard</a>
-
-  </div>
-
-</body>
-</html> -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Expenses - Apartment Maintenance</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      background-color: #f3f4f6;
-    }
-    .navbar {
-      background-color: #2c3e50;
-      color: white;
-      padding: 15px;
-      font-weight: bold;
-      text-align: center;
-    }
-    .container {
-      padding: 30px;
-    }
-    h2 {
-      color: #111827;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background-color: white;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    th, td {
-      padding: 12px;
-      text-align: center;
-      border-bottom: 1px solid #e5e7eb;
-    }
-    th {
-      background-color: #10b981;
-      color: white;
-    }
-    .back-btn {
-      margin-top: 20px;
-      display: inline-block;
-      background-color: #10b981;
-      color: white;
-      padding: 10px 20px;
-      text-decoration: none;
-      border-radius: 6px;
-    }
-    .high-expense {
-      background-color: #fee2e2;
-      color: #b91c1c;
-      font-weight: bold;
-    }
-    form {
-      background-color: white;
-      padding: 20px;
-      margin-bottom: 30px;
-      border-radius: 10px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
-    }
-    form input, form select {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 15px;
-      border-radius: 6px;
-      border: 1px solid #d1d5db;
-    }
-    form button {
-      background-color: #2563eb;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-  </style>
-</head>
-<body>
-
-  <div class="navbar">Expense Records - Apartment Society</div>
-
-  <div class="container">
-
-    <h2>Log New Expense</h2>
-    <form method="POST" action="{{ url_for('main.add_expense') }}">
-      <select name="category" required>
-        <option value="">Select Category</option>
-        <option value="Generator">Generator</option>
-        <option value="Lift">Lift</option>
-        <option value="Common Maintenance">Common Maintenance</option>
-        <option value="Plumbing">Plumbing</option>
-        <option value="Security">Security</option>
-        <option value="Electricity">Electricity</option>
-        <option value="Repairs">Repairs</option>
-        <option value="Taxes">Taxes</option>
-        <option value="Other">Other</option>
-      </select>
-      <input type="number" name="amount" placeholder="Amount (₹)" step="0.01" required>
-      <input type="date" name="date" required>
-      <button type="submit">Add Expense</button>
-    </form>
-
-    <h2>Monthly Expenses</h2>
-    <table id="expenseTable">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Date</th>
-          <th>Category</th>
-          <th>Amount (₹)</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for exp in expenses %}
-        <tr class="{% if exp.amount > 5000 %}high-expense{% endif %}">
-          <td>{{ exp.expense_id }}</td>
-          <td>{{ exp.date.strftime('%Y-%m-%d') }}</td>
-          <td>{{ exp.category }}</td>
-          <td>{{ '{:,.2f}'.format(exp.amount) }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-    <a class="back-btn" href="{{ url_for('main.dashboard') }}">← Back to Dashboard</a>
-
-  </div>
-
-</body>
-</html>
+{% endblock %}

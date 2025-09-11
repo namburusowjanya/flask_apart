@@ -1,149 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Maintenance Bills</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f7f7f7;
-      padding: 20px;
-    }
+{% extends 'base.html' %}
+{% block title %}Maintenance Bills{% endblock %}
 
-    h2 {
-      text-align: center;
-      color: #333;
-    }
+{% block content %}
+<div class="container mt-4">
 
-    .top-bar {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 20px;
-      align-items: center;
-    }
-
-    .top-bar a {
-      text-decoration: none;
-      background: #2196F3;
-      color: white;
-      padding: 8px 14px;
-      border-radius: 5px;
-    }
-
-    form {
-      background: #fff;
-      padding: 15px;
-      border-radius: 5px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-    }
-
-    form input, form select {
-      padding: 8px;
-      margin: 5px 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-
-    form button {
-      background: #4CAF50;
-      color: white;
-      padding: 8px 12px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: white;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    th, td {
-      padding: 10px;
-      border: 1px solid #ddd;
-      text-align: center;
-    }
-
-    th {
-      background-color: #4CAF50;
-      color: white;
-    }
-
-    tr:nth-child(even) {
-      background-color: #f2f2f2;
-    }
-
-    .status.paid {
-      color: green;
-      font-weight: bold;
-    }
-
-    .status.pending {
-      color: red;
-      font-weight: bold;
-    }
-
-    button.action-btn {
-      padding: 6px 10px;
-      border: none;
-      border-radius: 4px;
-      color: white;
-      margin: 2px;
-      cursor: pointer;
-    }
-
-    .edit-btn {
-      background: #2196F3;
-    }
-
-    .mark-paid-btn {
-      background: #4CAF50;
-    }
-
-    .download-btn {
-      background: #FF9800;
-    }
-  </style>
-</head>
-<body>
-
-  <div class="top-bar">
-    <a href="{{ url_for('main.dashboard') }}">← Go to Dashboard</a>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">← Go to Dashboard</a>
     <h2>Maintenance Bills - {{ current_month }}</h2>
-    <a class="download-btn" href="{{ url_for('main.download_report', month=current_month) }}">Download Report</a>
+    <!-- <a class="btn btn-warning" href="{{ url_for('main.download_report', month=current_month) }}">Download Report</a> -->
   </div>
-  <form method="GET" action="{{ url_for('main.maintenance_bills') }}" style="margin-bottom: 20px;">
-    <label for="filter-month">Filter by Month:</label>
-    <input type="month" id="filter-month" name="month" value="{{ current_month }}">
-    <button type="submit">Filter</button>
-  </form>
-  <!-- Add Maintenance Bill Form -->
-  <form method="POST" action="{{ url_for('main.maintenance_bills') }}">
-    <label>Flat Number: <input type="text" name="flat_number" required></label>
-    <label>Base Amount: <input type="number" name="base_amount" required></label>
-    <label>Month:
-      <input type="month" name="month" value="{{ current_month }}" required>
-    </label>
-    <label>
-      Payment Method:
-      <select name="method" required>
-        <option value="Select mode">Select</option>
-        <option value="Online">Online</option>
-        <option value="Cash">Cash</option>
-        <option value="None">None</option>
-      </select>
-  
-    </label>
-    <button type="submit">Add Bill</button>
+
+  <!-- Filter by Month -->
+  <form method="GET" action="{{ url_for('main.maintenance_bills') }}" class="mb-4">
+    <label for="filter-month" class="form-label">Filter by Month:</label>
+    <input type="month" id="filter-month" name="month" value="{{ current_month }}" class="form-control d-inline-block" style="width: auto;">
+    <button type="submit" class="btn btn-primary ms-2">Filter</button>
   </form>
 
   <!-- Bills Table -->
-  <table>
-    <thead>
+  <table class="table table-bordered table-hover shadow-sm">
+    <thead class="table-success">
       <tr>
         <th>Bill ID</th>
         <th>Flat</th>
@@ -163,9 +39,9 @@
         <td class="amount">{{ "%.2f"|format(bill.base_amount) }}</td>
         <td class="status {{ bill.status|lower }}">{{ bill.status }}</td>
         <td>
-          <button class="action-btn edit-btn" onclick="editRow(this)">Edit</button>
+          <button class="btn btn-sm btn-primary me-1" onclick="editRow(this)">Edit</button>
           {% if bill.status != 'Paid' %}
-          <button class="action-btn mark-paid-btn" onclick="markPaid(this)">Mark Paid</button>
+          <button class="btn btn-sm btn-success mark-paid-btn" onclick="markPaid(this)">Mark Paid</button>
           {% endif %}
         </td>
         <td>{{ bill.method }}</td>
@@ -174,77 +50,79 @@
     </tbody>
   </table>
 
-  <script>
-    function editRow(btn) {
-      const row = btn.closest("tr");
-      const billId = row.dataset.id;
-      const amountCell = row.querySelector(".amount");
-      const statusCell = row.querySelector(".status");
+</div>
 
-      const currentAmount = parseFloat(amountCell.textContent);
-      const currentStatus = statusCell.textContent.trim();
+<script>
+  function editRow(btn) {
+    const row = btn.closest("tr");
+    const billId = row.dataset.id;
+    const amountCell = row.querySelector(".amount");
+    const statusCell = row.querySelector(".status");
 
-      const newAmount = prompt("Enter new base amount:", currentAmount);
-      if (newAmount === null || isNaN(newAmount)) return alert("Invalid base amount");
+    const currentAmount = parseFloat(amountCell.textContent);
+    const currentStatus = statusCell.textContent.trim();
 
-      const newStatus = prompt("Enter new status (Paid or Pending):", currentStatus);
-      if (newStatus !== "Paid" && newStatus !== "Pending") return alert("Invalid status");
+    const newAmount = prompt("Enter new base amount:", currentAmount);
+    if (newAmount === null || isNaN(newAmount)) return alert("Invalid base amount");
 
-      const method = prompt("Enter payment method (Online or Cash):", row.querySelector("td:nth-child(7)").textContent.trim());
-      if (method !== "Online" && method !== "Cash") return alert("Invalid payment method");
+    const newStatus = prompt("Enter new status (Paid or Pending):", currentStatus);
+    if (newStatus !== "Paid" && newStatus !== "Pending") return alert("Invalid status");
 
-      fetch(`/edit_bill_amount/${billId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify({
-          base_amount: parseFloat(newAmount),
-          status: newStatus
-        })
+    const method = prompt("Enter payment method (Online or Cash):", row.querySelector("td:nth-child(7)").textContent.trim());
+    if (method !== "Online" && method !== "Cash") return alert("Invalid payment method");
+
+    fetch(`/edit_bill_amount/${billId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: JSON.stringify({
+        base_amount: parseFloat(newAmount),
+        status: newStatus,
+        method: method
       })
-      .then(res => res.json())
-      .then(data => {
-        if (data.message) {
-          amountCell.textContent = parseFloat(newAmount).toFixed(2);
-          statusCell.textContent = newStatus;
-          statusCell.className = `status ${newStatus.toLowerCase()}`;
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.message) {
+        amountCell.textContent = parseFloat(newAmount).toFixed(2);
+        statusCell.textContent = newStatus;
+        statusCell.className = `status ${newStatus.toLowerCase()}`;
 
-          if (newStatus === "Paid") {
-            const markBtn = row.querySelector(".mark-paid-btn");
-            if (markBtn) markBtn.remove();
-          }
-        } else {
-          alert("Update failed: " + data.error);
+        if (newStatus === "Paid") {
+          const markBtn = row.querySelector(".mark-paid-btn");
+          if (markBtn) markBtn.remove();
         }
-      });
-    }
+      } else {
+        alert("Update failed: " + data.error);
+      }
+    });
+  }
 
-    function markPaid(btn) {
-      const row = btn.closest("tr");
-      const billId = row.dataset.id;
+  function markPaid(btn) {
+    const row = btn.closest("tr");
+    const billId = row.dataset.id;
 
-      fetch(`/update_bill_status/${billId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify({ status: "Paid" })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.message) {
-          const statusCell = row.querySelector(".status");
-          statusCell.textContent = "Paid";
-          statusCell.className = "status paid";
-          btn.remove();
-        } else {
-          alert("Mark Paid failed: " + data.error);
-        }
-      });
-    }
-  </script>
-</body>
-</html>
+    fetch(`/update_bill_status/${billId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: JSON.stringify({ status: "Paid" })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.message) {
+        const statusCell = row.querySelector(".status");
+        statusCell.textContent = "Paid";
+        statusCell.className = "status paid";
+        btn.remove();
+      } else {
+        alert("Mark Paid failed: " + data.error);
+      }
+    });
+  }
+</script>
+{% endblock %}
