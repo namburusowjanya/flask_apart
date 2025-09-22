@@ -112,12 +112,19 @@
     <div class="row">
       <div class="col">
         <label for="flat">Flat</label>
-        <select id="flat" name="flat_no" required>
+        <input list="flatsList" id="flatInput" name="flat_no" placeholder="Type or select flat" required>
+
+        <datalist id="flatsList">
+          {% for f in flats %}
+            <option value="{{ f.flat_number }}">{{ f.owner_name }}</option>
+          {% endfor %}
+        </datalist>
+        <!-- <select id="flat" name="flat_no" required onchange="toggleManualInput()">
           <option value="">Select flat</option>
           {% for f in flats %}
             <option value="{{ f.flat_number }}">{{ f.flat_number }} — {{ f.owner_name }}</option>
           {% endfor %}
-        </select>
+        </select> -->
       </div>
 
       <div class="col">
@@ -225,6 +232,8 @@
     const months = parseInt(monthsSelect.value) || 0;
     totalInput.value = (monthly > 0 && months > 0) ? (monthly * months).toFixed(2) : '';
   }
+
+  
 
   monthlyInput.addEventListener('input', calcTotal);
   monthsSelect.addEventListener('change', calcTotal);

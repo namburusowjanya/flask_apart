@@ -40,13 +40,13 @@
 <body>
    <nav>
         <a href="{{ url_for('main.dashboard') }}">Home</a>
-        <a href="{{ url_for('main.maintenance_bills') }}">Maintenance Bills</a>
-        <a href="{{ url_for('main.credits_page')}}">Credits</a>
-        <a href="{{ url_for('main.expenses') }}">Expenses</a>
-        <a href="{{ url_for('main.monthly_report') }}">Reports</a>
         <a href="{{ url_for('main.flats_info') }}">Flats</a>
         <a href="{{ url_for('main.advanced_payments') }}"><b>Advanced Payments</b></a>
+        <a href="{{ url_for('main.maintenance_bills') }}">Maintenance Bills</a>
+        <a href="{{ url_for('main.expenses') }}">Expenses</a>
+        <a href="{{ url_for('main.monthly_report') }}">Reports</a>
         <a href="{{ url_for('main.pending_dues') }}"><b>Pending Dues</b></a>
+        <a href="{{ url_for('main.credits_page')}}">Credits</a>
         <a href="{{ url_for('auth.logout') }}">Logout</a>
     </nav>
 

@@ -1,0 +1,6 @@
+flask
+SQLAlchemy
+requests
+cryptography
+Flask-Migrate
+APScheduler

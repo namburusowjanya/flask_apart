@@ -25,11 +25,4 @@ def create_app():
     # Start APScheduler
     scheduler = BackgroundScheduler()
     scheduler.start()
-    from app.reports import generate_monthly_financial_report
-    from datetime import datetime
-    def scheduled_financial_report():
-        month = datetime.today().strftime('%Y-%m')
-        generate_monthly_financial_report(month)
-
-    scheduler.add_job(func=scheduled_financial_report, trigger='cron', day=1, hour=0)
     return app

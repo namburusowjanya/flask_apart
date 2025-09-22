@@ -4,14 +4,12 @@ from sqlalchemy import extract, func
 from werkzeug.utils import secure_filename
 import os
 import logging
-from app.tasks import generate_monthly_report
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta
 from app import db
 from app.models import (
     User, Flat, MaintenanceBill,
     Expense, FinancialReport, CategoryBudget,AdvancePayment,Credit)
-from app.uploads import save_receipt
 main_bp = Blueprint('main', __name__, url_prefix='')
 
 # --- authentication decorator ---
@@ -296,35 +294,6 @@ def add_maintenance_bill():
 
     return redirect(url_for('main.maintenance_bills', month=month))
 
-# # --- REPORTS page ---
-# @main_bp.route('/reports', methods=['GET'])
-# @login_required
-# def reports():
-#     month = request.args.get('month')
-#     if month:
-#         reports = FinancialReport.query.filter_by(month=month).all()
-#     else:
-#         reports = FinancialReport.query.order_by(FinancialReport.month.desc()).all()
-#     return render_template('reports.html', reports=reports, selected_month=month)
-
-# @main_bp.route('/generate-financial-report', methods=['GET'])
-# @login_required
-# def manual_generate_report():
-#     month = request.args.get('month')
-#     if not month:
-#         flash("Please select a month.", "warning")
-#         return redirect(url_for('main.reports'))
-#     # Check if report already exists
-#     existing = FinancialReport.query.filter_by(month=month).first()
-#     if existing:
-#         flash(f"Report for {month} already exists. Regeneration will overwrite the existing report.", "danger")
-#         return redirect(url_for('main.reports', month=month))
-
-#     from app.tasks import generate_monthly_report
-#     generate_monthly_report(month)
-#     flash(f"Report for {month} generated successfully.", "success")
-#     return redirect(url_for('main.reports', month=month))
-
 @main_bp.route('/download-report/<string:month>', methods=['GET'])
 def download_report(month):
     folder_path = os.path.join(os.getcwd(), 'app', 'generated_reports')
@@ -491,6 +460,14 @@ def monthly_report():
     expenses = Expense.query.filter(Expense.date.startswith(month_str)).all()
     total_expenses = sum(e.amount for e in expenses)
 
+    category_expenses = (
+        db.session.query(Expense.category, func.sum(Expense.amount))
+        .filter(Expense.date.startswith(month_str))
+        .group_by(Expense.category)
+        .all()
+    )
+    category_expenses_dict = {cat: amt for cat, amt in category_expenses}
+
     # Calculate opening balance from previous month
     opening_balance = get_opening_balance(year, month)
 
@@ -504,4 +481,35 @@ def monthly_report():
                            total_maintenance=total_maintenance,
                            total_expenses=total_expenses,
                            opening_balance=opening_balance,
-                           closing_balance=closing_balance)
+                           closing_balance=closing_balance,
+                           category_expenses=category_expenses_dict)
+@main_bp.route('/monthly_report/print', methods=['GET'])
+def monthly_report_print():
+    month_str = request.args.get('month', datetime.now().strftime('%Y-%m'))
+    year, month = map(int, month_str.split('-'))
+
+    bills = MaintenanceBill.query.filter(MaintenanceBill.month.startswith(month_str)).all()
+    total_maintenance = sum(b.base_amount for b in bills)
+
+    expenses = Expense.query.filter(Expense.date.startswith(month_str)).all()
+    total_expenses = sum(e.amount for e in expenses)
+
+    category_expenses = (
+        db.session.query(Expense.category, func.sum(Expense.amount))
+        .filter(Expense.date.startswith(month_str))
+        .group_by(Expense.category)
+        .all()
+    )
+    category_expenses_dict = {cat: amt for cat, amt in category_expenses}
+
+    opening_balance = get_opening_balance(year, month)
+    closing_balance = opening_balance + total_maintenance - total_expenses
+
+    return render_template('print.html',
+                           month=month_str,
+                           bills=bills,
+                           total_maintenance=total_maintenance,
+                           total_expenses=total_expenses,
+                           opening_balance=opening_balance,
+                           closing_balance=closing_balance,
+                           category_expenses=category_expenses_dict)
