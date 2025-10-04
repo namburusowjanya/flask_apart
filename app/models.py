@@ -40,7 +40,7 @@ class Expense(db.Model):
     expense_id = db.Column(db.Integer, primary_key=True)
     flat_id = db.Column(db.Integer, db.ForeignKey('flats.flat_id', ondelete="CASCADE"))  # link to flat
     category = db.Column(db.String(50), nullable=False)
-    description = db.Column(db.Text)
+    # description = db.Column(db.Text)
     amount = db.Column(db.Float, nullable=False)
     date = db.Column(db.Date, nullable=False)
     receipt_url = db.Column(db.String(255))

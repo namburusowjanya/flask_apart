@@ -4,3 +4,4 @@ requests
 cryptography
 Flask-Migrate
 APScheduler
+pymysql

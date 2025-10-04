@@ -438,8 +438,8 @@ def get_opening_balance(year, month):
     prev_expenses = sum(e.amount for e in Expense.query.filter(Expense.date.startswith(prev_month_str)).all())
 
     # Opening balance of previous month (recursively 0 if no earlier data)
-    if prev_year < 2020:  # arbitrary cutoff to avoid infinite recursion
-        return 0.0
+    if prev_year < 2024:
+        return 71421
 
     prev_opening = get_opening_balance(prev_year, prev_month)
 

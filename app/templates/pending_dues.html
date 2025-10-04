@@ -27,13 +27,22 @@
           {% for bill in item.bills %}
           <tr>
             <td>{{ item.flat.flat_number }}</td>
-            <td>{{ item.flat.owner_name }}</td>
+              <td>
+                {% if item.flat.tennant_name %}
+                    {{ item.flat.tennant_name }} (Tenant)<br>
+                    {{ item.flat.tennant_contact }}
+                {% else %}
+                    {{ item.flat.owner_name }} (Owner)<br>
+                    {{ item.flat.owner_contact }}
+                {% endif %}
+              </td>
             <td>{{ bill.month }}</td>
             <td>₹{{ "%.2f"|format(bill.base_amount) }}</td>
           </tr>
           {% endfor %}
         {% endfor %}
       </tbody>
+
     </table>
   {% else %}
     <p class="text-success">No pending dues 🎉</p>
