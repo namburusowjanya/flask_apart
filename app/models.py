@@ -8,8 +8,10 @@ class Flat(db.Model):
     flat_number = db.Column(db.String(10),unique=True,nullable=False,)
     owner_name = db.Column(db.String(100), nullable=False)
     owner_contact = db.Column(db.String(15), nullable=False)
+    owner_email = db.Column(db.String(100),nullable=False)
     tennant_name = db.Column(db.String(100), nullable=True)  
     tennant_contact = db.Column(db.String(15), nullable=True)
+    tennant_email = db.Column(db.String(100),nullable=False)
 
     bills = db.relationship(
         'MaintenanceBill',
@@ -40,7 +42,6 @@ class Expense(db.Model):
     expense_id = db.Column(db.Integer, primary_key=True)
     flat_id = db.Column(db.Integer, db.ForeignKey('flats.flat_id', ondelete="CASCADE"))  # link to flat
     category = db.Column(db.String(50), nullable=False)
-    # description = db.Column(db.Text)
     amount = db.Column(db.Float, nullable=False)
     date = db.Column(db.Date, nullable=False)
     receipt_url = db.Column(db.String(255))

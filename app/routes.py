@@ -6,7 +6,8 @@ import os
 import logging
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta
-from app import db
+from app import db,mail
+from flask_mail import Message
 from app.models import (
     User, Flat, MaintenanceBill,
     Expense, FinancialReport, CategoryBudget,AdvancePayment,Credit)
@@ -37,8 +38,10 @@ def flats_info():
             'flat_number': flat.flat_number,
             'owner_name': flat.owner_name,
             'owner_contact': flat.owner_contact,
+            'owner_email': flat.owner_email,
             'tennant_name': flat.tennant_name,
-            'tennant_contact': flat.tennant_contact
+            'tennant_contact': flat.tennant_contact,
+            'tennant_email': flat.tennant_email,
         })
     return render_template('total_flats.html', flats=flats_data)
 
@@ -58,8 +61,10 @@ def save_flat():
     flat.flat_number = request.form.get('flat_number')
     flat.owner_name = request.form.get('owner_name')
     flat.owner_contact = request.form.get('owner_contact')
+    flat.owner_email = request.form.get('owner_email')
     flat.tennant_name = request.form.get('tennant_name')
     flat.tennant_contact = request.form.get('tennant_contact')
+    flat.tennant_email = request.form.get('tennant_email')
 
     try:
         db.session.commit()
@@ -352,18 +357,23 @@ def add_advance_payment():
 @login_required
 def pending_dues():
     selected_month = request.args.get("month", datetime.today().strftime("%Y-%m"))
+    pending_data = get_pending_data(selected_month)
 
+    return render_template(
+        "pending_dues.html",
+        pending_data=pending_data,
+        selected_month=selected_month,
+        email_results=[],
+        message=None
+    )
+def get_pending_data(selected_month):
     flats = Flat.query.all()
     pending_data = []
-
     for flat in flats:
         flat_id = flat.flat_id
-
-        # 1. Get all advance payments for the flat
         advances = AdvancePayment.query.filter_by(flat_id=flat_id).all()
-
-        # 2. Build set of prepaid months
         prepaid_months = set()
+
         for adv in advances:
             year, month = map(int, adv.start_month.split('-'))
             for _ in range(adv.months_paid_for):
@@ -373,22 +383,92 @@ def pending_dues():
                     month = 1
                     year += 1
 
-        # 3. If the selected month is NOT in prepaid months, it's pending
         if selected_month not in prepaid_months:
-            # Create a pseudo bill just for display purposes
             pseudo_bill = MaintenanceBill(
                 flat_id=flat_id,
-                base_amount=1500.0,  # Default rent
+                base_amount=1500.0,
                 month=selected_month,
                 status="Pending",
                 method=""
             )
-            pending_data.append({
-                "flat": flat,
-                "bills": [pseudo_bill]
-            })
+            pending_data.append({"flat": flat, "bills": [pseudo_bill]})
 
-    return render_template("pending_dues.html", pending_data=pending_data, selected_month=selected_month)
+    return pending_data
+@main_bp.route("/send_due_emails", methods=["POST"])
+@login_required
+def send_due_emails():
+    selected_month = request.form.get("month", datetime.today().strftime("%Y-%m"))
+    selected_flats = request.form.getlist("selected_flats")
+    results = []
+    if not selected_flats:
+        pending_data = get_pending_data(selected_month)
+        return render_template(
+            "pending_dues.html",
+            pending_data=pending_data,
+            selected_month=selected_month,
+            email_results=[],
+            message="⚠️ No flats selected for email reminder."
+        )
+
+    flats = Flat.query.filter(Flat.flat_id.in_(selected_flats)).all()
+
+    for flat in flats:
+        try:
+            advances = AdvancePayment.query.filter_by(flat_id=flat.flat_id).all()
+            prepaid_months = set()
+            for adv in advances:
+                year, month = map(int, adv.start_month.split('-'))
+                for _ in range(adv.months_paid_for):
+                    prepaid_months.add(f"{year}-{str(month).zfill(2)}")
+                    month += 1
+                    if month > 12:
+                        month = 1
+                        year += 1
+
+            if selected_month not in prepaid_months:
+                send_due_email(flat, selected_month)
+                results.append((flat.flat_number, "✅ Sent"))
+            else:
+                results.append((flat.flat_number, "⏭️ Already paid"))
+        except Exception as e:
+            results.append((flat.flat_number, f"❌ Failed: {str(e)[:80]}"))
+
+    pending_data = get_pending_data(selected_month)
+
+    return render_template(
+        "pending_dues.html",
+        pending_data=pending_data,
+        selected_month=selected_month,
+        email_results=results,
+        message=None
+    )
+
+def send_due_email(flat, month):
+    """Send a reminder email for pending dues."""
+    subject = f"Maintenance Due Reminder - {month}"
+    recipients = []
+    if flat.tennant_email:
+        recipients.append(flat.tennant_email)
+    elif flat.owner_email:
+        recipients.append(flat.owner_email)
+    if not recipients:
+        return 
+    msg = Message(subject=subject, recipients=recipients)
+    msg.body = f"""
+                Dear {flat.tennant_name or flat.owner_name},
+                This is a gentle reminder that your maintenance payment for {month} is pending.
+                Flat Number: {flat.flat_number}
+                Owner: {flat.owner_name}
+                Amount Due: ₹1500
+                Please make your payment at your earliest convenience.
+                Best regards,  
+                Your Housing Society Team"""
+
+    try:
+        mail.send(msg)
+        print(f"✅ Email sent to {recipients} for Flat {flat.flat_number}")
+    except Exception as e:
+        print(f"❌ Failed to send email to {recipients}: {e}")
 
 @main_bp.route('/credits', methods=['GET'])
 @login_required
