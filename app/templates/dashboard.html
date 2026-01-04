@@ -10,18 +10,42 @@
             margin: 0;
             padding: 0;
             /* Add background image */
-            background-image: url('image.png');
+            background-image: url("{{ url_for('static', filename='images/image.png') }}");
             background-size: cover;
             background-repeat: no-repeat;
             background-attachment: fixed;
             background-position: center;
         }
 
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.35);
+            z-index: -1;
+        }
+
         header {
-            background-color: #2c3e50cc; /* Add transparency */
-            padding: 20px;
+            background: rgba(0, 0, 0, 0.65); /* darker overlay */
+            padding: 60px 20px;
             color: white;
             text-align: center;
+            backdrop-filter: blur(2px);
+        }
+        header h1 {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+        }
+
+        header p {
+            font-size: 20px;
+            opacity: 0.95;
+            text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.7);
         }
 
         nav {
@@ -136,14 +160,13 @@
 <body>
 <nav>
     <nav>
-    <a href="{{ url_for('main.dashboard') }}">Home</a>
+        <a href="{{ url_for('main.dashboard') }}">Home</a>
         <a href="{{ url_for('main.flats_info') }}">Flats</a>
         <a href="{{ url_for('main.advanced_payments') }}"><b>Advanced Payments</b></a>
         <a href="{{ url_for('main.maintenance_bills') }}">Maintenance Bills</a>
         <a href="{{ url_for('main.expenses') }}">Expenses</a>
         <a href="{{ url_for('main.monthly_report') }}">Reports</a>
         <a href="{{ url_for('main.pending_dues') }}"><b>Pending Dues</b></a>
-        <a href="{{ url_for('main.credits_page')}}">Credits</a>
         <a href="{{ url_for('auth.logout') }}">Logout</a>
     
 </nav>

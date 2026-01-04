@@ -10,7 +10,7 @@ from app import db,mail
 from flask_mail import Message
 from app.models import (
     User, Flat, MaintenanceBill,
-    Expense, FinancialReport, CategoryBudget,AdvancePayment,Credit)
+    Expense, FinancialReport,AdvancePayment)
 main_bp = Blueprint('main', __name__, url_prefix='')
 
 # --- authentication decorator ---
@@ -30,7 +30,7 @@ def dashboard():
 @main_bp.route('/flats/info')
 @login_required
 def flats_info():
-    flats = Flat.query.all()
+    flats = Flat.query.filter_by(is_active=True).all()
     flats_data = []
     for flat in flats:
         flats_data.append({
@@ -49,16 +49,19 @@ def flats_info():
 @login_required
 def save_flat():
     flat_id = request.form.get('flat_id')
-
+    flat_number = request.form.get('flat_number')
     if flat_id:
         flat = Flat.query.get(flat_id)
         if not flat:
             return "Flat not found", 404
     else:
-        flat = Flat()
-        db.session.add(flat)  # only add new flats
-
-    flat.flat_number = request.form.get('flat_number')
+        flat = Flat.query.filter_by(flat_number=flat_number).first()
+        if flat:
+            flat.is_active = True
+        else:
+            flat = Flat()
+            db.session.add(flat)
+    flat.flat_number = flat_number
     flat.owner_name = request.form.get('owner_name')
     flat.owner_contact = request.form.get('owner_contact')
     flat.owner_email = request.form.get('owner_email')
@@ -77,10 +80,10 @@ def save_flat():
 @main_bp.route('/flats/delete/<int:flat_id>', methods=['POST'])
 @login_required
 def delete_flat(flat_id):
-    f = Flat.query.get_or_404(flat_id)
-    db.session.delete(f)
+    flat = Flat.query.get_or_404(flat_id)
+    flat.is_active = False
     db.session.commit()
-    flash('Flat successfully deleted!', 'success')
+    # flash('Flat marked as inactive. Financial data preserved.', 'success')
     return redirect(url_for('main.flats_info'))
 
 @main_bp.route('/update_bill_status/<int:bill_id>', methods=['POST'])
@@ -469,38 +472,6 @@ def send_due_email(flat, month):
         print(f"✅ Email sent to {recipients} for Flat {flat.flat_number}")
     except Exception as e:
         print(f"❌ Failed to send email to {recipients}: {e}")
-
-@main_bp.route('/credits', methods=['GET'])
-@login_required
-def credits_page():
-    flats = Flat.query.all()
-    credits = Credit.query.order_by(Credit.created_at.desc()).all()
-    return render_template('credits.html', flats=flats, credits=credits)
-
-@main_bp.route('/add_credit', methods=['POST'])
-@login_required
-def add_credit():
-    flat_no = request.form.get('flat_no')
-    amount = request.form.get('amount')
-    reason = request.form.get('reason')
-
-    flat = Flat.query.filter_by(flat_number=flat_no).first()
-    if not flat:
-        flash("Flat not found.", "error")
-        return redirect(url_for('main.credits_page'))
-
-    try:
-        amount = float(amount)
-    except ValueError:
-        flash("Invalid amount.", "error")
-        return redirect(url_for('main.credits_page'))
-
-    credit = Credit(flat_id=flat.flat_id, amount=amount, reason=reason)
-    db.session.add(credit)
-    db.session.commit()
-
-    flash("Credit added successfully.", "success")
-    return redirect(url_for('main.credits_page'))
 
 def get_previous_month(year, month):
     if month == 1:
