@@ -1,7 +1,6 @@
                                                         Apartment Maintenance Management System — README
  Project Overview:
-   A Python Flask web application to automate financial operations for a 40-flat apartment complex. It supports monthly billing, payments, expense logging, financial reporting (balance sheet, cash flow), and
-   defaulter tracking. Designed for treasurer workflows with month-end closing and reports.
+   A Python Flask web application to automate financial operations for a 40-flat apartment complex. It supports monthly billing, payments, expense logging, financial reporting (balance sheet, cash flow),notify the pending dues and defaulter tracking. Designed for treasurer workflows with month-end closing balance and reports.
    
  Features:
    • Configure and generate monthly maintenance bills for 40 flats
@@ -11,6 +10,7 @@
    • Categorize expenses (electricity, repairs, taxes, security, plumbing, etc.)
    • Monthly financial reports: Balance Sheet, Cash Flow
    • Month-end closing with automatic report generation
+   . And send the notifications through emails for the owner or the tennant int the pending dues and keep track for the mails.
    
  Tech Stack
    • Backend: Flask (Python)
@@ -46,3 +46,4 @@
  2. Record payments as they come in.
  3. Log expenses daily
  4. At month end, perform closing and generate reports. 
+ 5. Send pending due notifications.
