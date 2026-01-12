@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Pending Dues - Apartment Maintenance{% endblock %}
+{% block content %}
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+    </style>
+<h2>Payment History</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Flat No</th>
+            <th>Start Month</th>
+            <th>Months Paid</th>
+            <th>Total Amount</th>
+            <th>Payment Date</th>
+            <th>Method</th>
+            <th>Receipt No</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for pay in payments %}
+        <tr>
+            <td>{{ pay.flat.flat_number }}</td>
+            <td>{{ pay.start_month }}</td>
+            <td>{{ pay.months_paid_for }}</td>
+            <td>₹{{ pay.total_amount }}</td>
+            <td>{{ pay.payment_date }}</td>
+            <td>{{ pay.method }}</td>
+            <td>{{ pay.receipt_number }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="7">No payment records found</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<br>
+    <a href="{{ url_for('main.user_dashboard') }}" class="btn btn-primary mt-3">← Back to Dashboard</a>
+{% endblock%}

@@ -12,6 +12,11 @@ from app.models import (
     User, Flat, MaintenanceBill,
     Expense, FinancialReport,AdvancePayment)
 main_bp = Blueprint('main', __name__, url_prefix='')
+@main_bp.route('/')
+def root():
+    return redirect(url_for('auth.login'))
+def current_user():
+    return User.query.get(session['user_id'])
 
 # --- authentication decorator ---
 def login_required(f):
@@ -27,10 +32,20 @@ def login_required(f):
 @login_required
 def dashboard():
     return render_template('dashboard.html')
+@main_bp.route('/user-dashboard')
+@login_required
+def user_dashboard():
+    if session.get('role') != 'user':
+        return redirect(url_for('main.dashboard'))
+    return render_template('user_dashboard.html')
 @main_bp.route('/flats/info')
 @login_required
 def flats_info():
-    flats = Flat.query.filter_by(is_active=True).all()
+    user = current_user()
+    if user.role == 'admin':
+        flats = Flat.query.filter_by(is_active=True).all()
+    else:
+        flats = Flat.query.filter_by(flat_id=user.flat_id).all()
     flats_data = []
     for flat in flats:
         flats_data.append({
@@ -370,11 +385,14 @@ def pending_dues():
         message=None
     )
 def get_pending_data(selected_month):
-    flats = Flat.query.all()
+    user = User.query.get(session['user_id'])
+    if user.role == 'admin':
+        flats = Flat.query.all()
+    else:
+        flats = Flat.query.filter_by(flat_id=user.flat_id).all()
     pending_data = []
     for flat in flats:
-        flat_id = flat.flat_id
-        advances = AdvancePayment.query.filter_by(flat_id=flat_id).all()
+        advances = AdvancePayment.query.filter_by(flat_id=flat.flat_id).all()
         prepaid_months = set()
 
         for adv in advances:
@@ -388,15 +406,27 @@ def get_pending_data(selected_month):
 
         if selected_month not in prepaid_months:
             pseudo_bill = MaintenanceBill(
-                flat_id=flat_id,
+                flat_id=flat.flat_id,
                 base_amount=1500.0,
                 month=selected_month,
                 status="Pending",
                 method=""
             )
-            pending_data.append({"flat": flat, "bills": [pseudo_bill]})
+            pending_data.append({
+                "flat": flat,
+                "bills": [pseudo_bill]
+            })
 
     return pending_data
+@main_bp.route('/my-payments')
+@login_required
+def my_payments():
+    flat_id = session.get('flat_id')
+
+    payments = AdvancePayment.query.filter_by(flat_id=flat_id)\
+                .order_by(AdvancePayment.payment_date.desc()).all()
+
+    return render_template("my_payments.html", payments=payments)
 @main_bp.route("/send_due_emails", methods=["POST"])
 @login_required
 def send_due_emails():

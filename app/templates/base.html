@@ -38,15 +38,26 @@
     </style>
 </head>
 <body>
-   <nav>
-        <a href="{{ url_for('main.dashboard') }}">Home</a>
-        <a href="{{ url_for('main.flats_info') }}">Flats</a>
-        <a href="{{ url_for('main.advanced_payments') }}"><b>Advanced Payments</b></a>
-        <a href="{{ url_for('main.maintenance_bills') }}">Maintenance Bills</a>
-        <a href="{{ url_for('main.expenses') }}">Expenses</a>
-        <a href="{{ url_for('main.monthly_report') }}">Reports</a>
-        <a href="{{ url_for('main.pending_dues') }}"><b>Pending Dues</b></a>
-        <a href="{{ url_for('auth.logout') }}">Logout</a>
+    <nav class="navbar">
+        <div class="nav-left">
+            <span class="logo">Koundinyasa Residency</span>
+        </div>
+        <div class="nav-right">
+            {% if session.get('role') == 'admin' %}
+                <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('main.flats_info') }}">Flats</a>
+                <a href="{{ url_for('main.expenses') }}">Expenses</a>
+                <a href="{{ url_for('main.maintenance_bills') }}">Maintenance</a>
+                <a href="{{ url_for('main.advanced_payments') }}">Advance Payments</a>
+                <a href="{{ url_for('main.pending_dues') }}">Pending Dues</a>
+                <a href="{{ url_for('main.monthly_report') }}">Reports</a>
+            {% elif session.get('role') == 'user' %}
+                <a href="{{ url_for('main.user_dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('main.pending_dues') }}">My Dues</a>
+                <a href="{{ url_for('main.my_payments') }}">My Payments</a>
+            {% endif %}
+            <a href="{{ url_for('auth.logout') }}">Logout</a>
+        </div>
     </nav>
 
   <div class="container mt-4">

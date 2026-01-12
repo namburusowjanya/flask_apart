@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Apartment Maintenance Management System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+            /* Add background image */
+            background-image: url("{{ url_for('static', filename='images/image.png') }}");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-position: center;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.35);
+            z-index: -1;
+        }
+
+        header {
+            background: rgba(0, 0, 0, 0.65); /* darker overlay */
+            padding: 60px 20px;
+            color: white;
+            text-align: center;
+            backdrop-filter: blur(2px);
+        }
+        header h1 {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+        }
+
+        header p {
+            font-size: 20px;
+            opacity: 0.95;
+            text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.7);
+        }
+
+        nav {
+            background-color: #1abc9ccc;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        a{
+            text-decoration: none;
+            font-weight: bolder;
+            color: black;
+            justify-content: center;
+            
+        }
+        nav a {
+            color: white;
+            padding: 14px 20px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        nav a:hover {
+            background-color: #16a085;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .card {
+            background-color: white;
+            border-left: 6px solid #3498db;
+            padding: 15px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+
+        .card.red { border-left-color: #e74c3c; }
+        .card.green { border-left-color: #2ecc71; }
+        .card.blue{ border-left-color: yellow; }
+        .quick-actions {
+            padding: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .quick-actions button {
+            padding: 15px 20px;
+            background-color: #1abc9c;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .quick-actions button:hover {
+            background-color: #16a085;
+        }
+
+        .notifications, .login-section {
+            padding: 20px;
+        }
+
+        .notification {
+            background-color: #fff;
+            padding: 10px;
+            border-left: 6px solid #9b59b6;
+            margin-bottom: 10px;
+            border-radius: 6px;
+        }
+
+        .login-form {
+            background-color: white;
+            max-width: 300px;
+            margin: 0 auto;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        .login-form input, .login-form select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .login-form button {
+            width: 100%;
+            background-color: #2980b9;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .login-form button:hover {
+            background-color: #2471a3;
+        }
+    </style>
+</head>
+<body>
+<nav>
+    <nav>
+        <a href="{{ url_for('main.my_payments') }}">My Payments</a>
+        <a href="{{ url_for('main.pending_dues') }}"><b>Pending Dues</b></a>
+        <a href="{{ url_for('auth.logout') }}">Logout</a>
+    </nav>
+</nav>
+<section class="dashboard">
+    <div class="card red">
+        <a href="{{ url_for('main.pending_dues') }}"><b>Pending Dues</b></a>
+        <p>View your pending dues</p>
+    </div>
+    <div class="card green">
+        <a href="{{ url_for('main.my_payments') }}">
+            My Payments
+        </a>
+        <p>View your payment history</p>
+    </div>
+</section>
+</body>
+</html>
